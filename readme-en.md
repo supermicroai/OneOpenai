@@ -2,8 +2,7 @@
 [English](readme-en.md) | [中文](readme.md)
 
 ## Overview
-OneAPI is an OpenAI proxy application designed to provide a unified LLM proxy service under the OpenAI protocol. It offers load balancing capabilities for multiple accounts of different third-party proxies based on a unified LLM model name. Additionally, it provides a user-friendly configuration interface.
-
+OneAPI is an OpenAI proxy application designed to provide LLM proxy services under a unified OpenAI protocol. It offers load balancing and fault tolerance capabilities for multiple accounts of different third-party proxies based on a unified LLM model name. Additionally, it provides a user-friendly configuration interface.
 ## Main Dependency Versions
 | Dependency     | Version   |
 |----------------|-----------|
