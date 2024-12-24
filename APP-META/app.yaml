@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oneapi
+  labels:
+    app: oneapi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oneapi
+  template:
+    metadata:
+      labels:
+        app: oneapi
+    spec:
+      containers:
+        - name: oneapi
+          image: supermicroai/oneapi:20241223
+          resources:
+            requests:
+              memory: 1024Mi
+            limits:
+              memory: 1024Mi
+          env:
+            - name: APP_MEM
+              value: 1024Mi
+          ports:
+            - containerPort: 7001
+          livenessProbe:
+            successThreshold: 1
+            failureThreshold: 3
+            periodSeconds: 5
+            initialDelaySeconds: 600
+            httpGet:
+              path: "/checkpreload.htm"
+              port: 7001
