@@ -103,4 +103,4 @@ INSERT INTO oneapi_config (config_group, config_key, config_value, version, note
     ('大模型', 'oneapi.success.rt', '60000', 0, '模型接口超时时间', 1, 'global');
 
 INSERT INTO oneapi_account (name, note, api_key, ak, sk, cost, balance, status) VALUES
-    ('openrouter', 'admin@163.com', 'sk-or-v1-this-is-a-demo-key', null, null, 0, 50, 1);
+    ('openrouter', 'admin@gmail.com', 'sk-or-v1-this-is-a-demo-key', null, null, 0, 50, 1);
