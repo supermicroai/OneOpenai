@@ -46,4 +46,30 @@ public interface OneapiTokenUsageMapper extends BaseMapper<OneapiTokenUsageDO> {
      */
     @Select("SELECT * FROM oneapi_token_usage WHERE status = #{status} ORDER BY gmt_create DESC")
     List<OneapiTokenUsageDO> selectByStatus(@Param("status") Integer status);
+    /**
+     * 多条件分页查询使用记录
+     */
+    @Select({
+        "<script>",
+        "SELECT * FROM oneapi_token_usage",
+        "WHERE 1=1",
+        "<if test='provider != null and provider != \"\"'> AND provider = #{provider} </if>",
+        "<if test='model != null and model != \"\"'> AND model = #{model} </if>",
+        "<if test='status != null'> AND status = #{status} </if>",
+        "<if test='startTime != null and startTime != \"\"'> AND gmt_create >= #{startTime} </if>",
+        "<if test='endTime != null and endTime != \"\"'> AND gmt_create <= #{endTime} </if>",
+        "ORDER BY gmt_create DESC",
+        "LIMIT #{pageSize} OFFSET #{offset}",
+        "</script>"
+    })
+    List<OneapiTokenUsageDO> selectByConditions(
+        @Param("provider") String provider,
+        @Param("model") String model,
+        @Param("status") Integer status,
+        @Param("startTime") String startTime,
+        @Param("endTime") String endTime,
+        @Param("page") Integer page,
+        @Param("pageSize") Integer pageSize,
+        @Param("offset") Integer offset
+    );
 }

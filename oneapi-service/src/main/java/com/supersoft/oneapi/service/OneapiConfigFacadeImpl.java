@@ -10,6 +10,8 @@ import com.supersoft.oneapi.provider.mapper.OneapiAccountMapper;
 import com.supersoft.oneapi.provider.mapper.OneapiModelMapper;
 import com.supersoft.oneapi.provider.mapper.OneapiProviderMapper;
 import com.supersoft.oneapi.proxy.service.OneapiConfigFacade;
+import com.supersoft.oneapi.token.data.OneapiTokenUsageDO;
+import com.supersoft.oneapi.token.service.OneapiTokenService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,8 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
     OneapiProviderMapper providerMapper;
     @Resource
     OneapiAccountMapper accountMapper;
+    @Resource
+    OneapiTokenService oneapiTokenService;
 
     @Override
     public OneapiMultiResult<OneapiModelDO> getModels() {
@@ -121,5 +125,11 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
         }
         accountMapper.deleteById(id);
         return OneapiSingleResult.success();
+    }
+
+    @Override
+    public OneapiMultiResult<OneapiTokenUsageDO> queryTokenUsageRecords(
+            String provider, String model, Integer status, String startTime, String endTime, Integer page, Integer pageSize) {
+        return oneapiTokenService.queryUsageRecords(provider, model, status, startTime, endTime, page, pageSize);
     }
 }

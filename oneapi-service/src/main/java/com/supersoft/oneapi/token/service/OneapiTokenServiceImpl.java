@@ -193,4 +193,16 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
     public String generateApiKey() {
         return "sk-oneapi-" + UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
     }
+
+    @Override
+    public OneapiMultiResult<OneapiTokenUsageDO> queryUsageRecords(String provider, String model, Integer status, String startTime, String endTime, Integer page, Integer pageSize) {
+        try {
+            int offset = (page != null && pageSize != null) ? (page - 1) * pageSize : 0;
+            List<OneapiTokenUsageDO> records = usageMapper.selectByConditions(provider, model, status, startTime, endTime, page, pageSize, offset);
+            return OneapiMultiResult.success(records);
+        } catch (Exception e) {
+            log.error("查询访问日志异常", e);
+            return OneapiMultiResult.fail("查询访问日志异常：" + e.getMessage());
+        }
+    }
 }

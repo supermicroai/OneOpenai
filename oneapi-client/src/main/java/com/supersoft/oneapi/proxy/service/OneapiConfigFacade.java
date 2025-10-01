@@ -69,4 +69,19 @@ public interface OneapiConfigFacade {
      * @return
      */
     OneapiSingleResult<Boolean> deleteAccount(Long id);
+
+    /**
+     * 查询访问日志（令牌使用记录）
+     * @param provider 服务提供商
+     * @param model 模型
+     * @param status 状态
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param page 页码
+     * @param pageSize 页大小
+     * @return 使用记录列表
+     */
+    OneapiMultiResult<com.supersoft.oneapi.token.data.OneapiTokenUsageDO> queryTokenUsageRecords(
+        String provider, String model, Integer status, String startTime, String endTime, Integer page, Integer pageSize
+    );
 }
