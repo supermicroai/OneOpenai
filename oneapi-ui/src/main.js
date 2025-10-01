@@ -10,11 +10,15 @@ import './style.css'
 import Providers from "@/pages/providers.vue";
 import Provider from '@/pages/Provider.vue'
 import Account  from "@/pages/accounts.vue";
+import Models from "@/pages/models.vue";
+import Tokens from "@/pages/tokens.vue";
 
 const router = createRouter({
     history: createWebHistory(),
     routes: [
         { path: '/', component: Providers },
+        { path: '/models', component: Models },
+        { path: '/tokens', component: Tokens },
         { path: '/accounts/:providerId', component: Account },
         { path: '/provider/:providerId', component: Provider }
     ],

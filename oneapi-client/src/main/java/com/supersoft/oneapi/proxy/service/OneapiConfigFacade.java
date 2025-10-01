@@ -62,4 +62,11 @@ public interface OneapiConfigFacade {
      * @return
      */
     OneapiSingleResult<Boolean> enableAccount(Long id, Boolean enable);
+
+    /**
+     * 删除账号
+     * @param id
+     * @return
+     */
+    OneapiSingleResult<Boolean> deleteAccount(Long id);
 }

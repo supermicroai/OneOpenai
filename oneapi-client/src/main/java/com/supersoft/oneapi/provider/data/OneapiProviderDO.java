@@ -18,7 +18,11 @@ public class OneapiProviderDO extends OneapiBaseObject {
     Date gmtCreate;
     Date gmtModified;
     /**
-     * 服务商名称, 同account表中关联
+     * 提供者代码，唯一标识
+     */
+    String code;
+    /**
+     * 服务商名称
      */
     String name;
     String type;

@@ -18,6 +18,7 @@ public class OneapiAccountDO extends OneapiBaseObject {
     Date gmtCreate;
     Date gmtModified;
 
+    String providerCode;  // 关联的提供商代码
     String name;
     String note;
 

@@ -1,38 +1,79 @@
 <template>
   <div class="provider-form">
-    <a-form labelAlign="left" :colon="false">
-      <a-form-item label="名称" :labelCol="{ span: 2 }">
+    <a-form labelAlign="left" :colon="false" :labelCol="{ style: { width: '150px' } }">
+      <a-form-item label="名称">
         <a-input v-model:value="provider.name" />
       </a-form-item>
-      <a-form-item label="网址" :labelCol="{ span: 2 }">
+      <a-form-item label="网址">
         <a-input v-model:value="provider.url" />
       </a-form-item>
-      <a-form-item label="API地址" :labelCol="{ span: 2 }">
+      <a-form-item label="API地址">
         <a-input v-model:value="provider.api" />
       </a-form-item>
-      <a-form-item label="模型类型" :labelCol="{ span: 2 }">
+      <a-form-item label="模型类型">
         <a-select v-model:value="provider.type" @change="filterModels">
           <a-select-option value="embedding">向量</a-select-option>
           <a-select-option value="llm">文本生成</a-select-option>
           <a-select-option value="ocr">OCR</a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item label="模型列表" :labelCol="{ span: 2 }">
-        <a-table :columns="columns" :dataSource="paginatedData" :pagination="pagination">
-          <template #bodyCell="{ column, record }">
-            <template v-if="column.dataIndex === 'name'">
-              <span>{{ record.name }}</span>
+      <a-form-item label="模型列表">
+        <div class="model-list-container">
+          <div class="model-list-header">
+            <a-button type="primary" @click="showAddModelModal" style="margin-bottom: 16px;">
+              <template #icon>
+                <PlusOutlined />
+              </template>
+              添加模型映射
+            </a-button>
+          </div>
+          <a-table :columns="columns" :dataSource="paginatedData" :pagination="pagination">
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.dataIndex === 'name'">
+                <span>{{ record.name }}</span>
+              </template>
+              <template v-else-if="column.dataIndex === 'value'">
+                <a-input v-model:value="record.value" />
+              </template>
+              <template v-else-if="column.dataIndex === 'action'">
+                <a-button type="link" danger @click="removeModel(record.name)">
+                  删除
+                </a-button>
+              </template>
             </template>
-            <template v-else-if="column.dataIndex === 'value'">
-              <a-input v-model:value="record.value" />
-            </template>
-          </template>
-        </a-table>
+          </a-table>
+        </div>
       </a-form-item>
       <a-form-item>
         <a-button type="primary" @click="handleSubmit">保存</a-button>
       </a-form-item>
     </a-form>
+
+    <!-- Add Model Modal -->
+    <a-modal
+      v-model:open="addModelModalVisible"
+      title="添加模型映射"
+      @ok="handleAddModel"
+      @cancel="cancelAddModel"
+      :confirm-loading="addModelLoading"
+      ok-text="确定"
+      cancel-text="取消"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="选择模型">
+          <a-select 
+            v-model:value="selectedModel" 
+            placeholder="请选择要添加的模型"
+            :options="availableModelsForAdd"
+            show-search
+            :filter-option="filterOption"
+          />
+        </a-form-item>
+        <a-form-item label="模型别名">
+          <a-input v-model:value="modelAlias" placeholder="请输入模型别名" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -40,6 +81,7 @@
 import { onMounted, ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
+import { PlusOutlined } from '@ant-design/icons-vue';
 import { getModels, getProvider, updateProvider } from '@/api/provider';
 
 const route = useRoute();
@@ -59,16 +101,27 @@ const filteredModelList = ref([]);
 const currentPage = ref(1);
 const pageSize = ref(10);
 
+// Add model modal related variables
+const addModelModalVisible = ref(false);
+const addModelLoading = ref(false);
+const selectedModel = ref('');
+const modelAlias = ref('');
+
 const columns = [
   {
     title: '模型名称',
     dataIndex: 'name',
-    width: 100,
+    width: 150,
   },
   {
     title: '别名',
     dataIndex: 'value',
     width: 200,
+  },
+  {
+    title: '操作',
+    dataIndex: 'action',
+    width: 100,
   }
 ];
 
@@ -100,9 +153,10 @@ const loadProvider = async () => {
         console.error('Error parsing models:', error);
       }
     }
+    // Use the original getModels API from provider.js
     const response = await getModels();
     const list = response.data.data;
-    modelList.value = list.sort((a, b) => a.name.localeCompare(b.name));
+    modelList.value = list ? list.sort((a, b) => a.name.localeCompare(b.name)) : [];
     filterModels();
   } catch (error) {
     console.error('Error fetching models:', error);
@@ -114,12 +168,86 @@ onMounted(() => {
 });
 
 const filterModels = () => {
-  filteredModelList.value = modelList.value
-      .filter(model => model.type === provider.value.type)
-      .map(model => ({
-        name: model.name,
-        value: provider.value.models[model.name] || ''
-      }));
+  // Only show models that have been configured (have values)
+  filteredModelList.value = Object.entries(provider.value.models || {})
+      .map(([modelName, modelAlias]) => ({
+        name: modelName,
+        value: modelAlias
+      }))
+      .filter(item => item.value && item.value.trim() !== '');
+};
+
+// Computed property for available models to add
+const availableModelsForAdd = computed(() => {
+  const currentModelNames = Object.keys(provider.value.models || {});
+  return modelList.value
+    .filter(model => model.type === provider.value.type && !currentModelNames.includes(model.name))
+    .map(model => ({
+      label: model.name,
+      value: model.name
+    }));
+});
+
+// Show add model modal
+const showAddModelModal = () => {
+  if (!provider.value.type) {
+    message.warning('请先选择模型类型');
+    return;
+  }
+  addModelModalVisible.value = true;
+  selectedModel.value = '';
+  modelAlias.value = '';
+};
+
+// Cancel add model
+const cancelAddModel = () => {
+  addModelModalVisible.value = false;
+  selectedModel.value = '';
+  modelAlias.value = '';
+};
+
+// Handle add model
+const handleAddModel = async () => {
+  if (!selectedModel.value) {
+    message.warning('请选择模型');
+    return;
+  }
+  if (!modelAlias.value.trim()) {
+    message.warning('请输入模型别名');
+    return;
+  }
+
+  addModelLoading.value = true;
+  try {
+    // Add the model to the provider's models
+    provider.value.models[selectedModel.value] = modelAlias.value.trim();
+    
+    // Update the filtered list
+    filterModels();
+    
+    // Close modal
+    addModelModalVisible.value = false;
+    selectedModel.value = '';
+    modelAlias.value = '';
+    
+    message.success('模型映射添加成功');
+  } catch (error) {
+    message.error('添加失败: ' + error.message);
+  } finally {
+    addModelLoading.value = false;
+  }
+};
+
+// Remove model
+const removeModel = (modelName) => {
+  delete provider.value.models[modelName];
+  filterModels();
+  message.success('模型映射已删除');
+};
+
+// Filter option for select
+const filterOption = (input, option) => {
+  return option.label.toLowerCase().includes(input.toLowerCase());
 };
 
 const handleSubmit = (e) => {
@@ -143,7 +271,7 @@ const handleSubmit = (e) => {
 .provider-form {
   display: flex;
   flex-direction: column;
-  width: calc(100% - 40px);
+  width: calc(100%);
   height: calc(100vh - 20px);
   padding: 20px;
   background-color: white;

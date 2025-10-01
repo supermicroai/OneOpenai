@@ -16,6 +16,7 @@ public class OneapiModelDO extends OneapiBaseObject {
     String gmtCreate;
     String gmtModified;
     String name;
+    String vendor;
     String type;
     Boolean enable;
 }

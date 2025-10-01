@@ -69,3 +69,11 @@ export function enableAccount (id, enable) {
         data: [id, enable]
     })
 }
+
+export function deleteAccount (id) {
+    return request({
+        url: '/service/com.supersoft.oneapi.proxy.service.OneapiConfigFacade/deleteAccount',
+        method: 'post',
+        data: [id]
+    })
+}

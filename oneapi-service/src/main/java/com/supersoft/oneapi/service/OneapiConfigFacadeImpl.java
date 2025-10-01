@@ -66,12 +66,14 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
         if (selected == null) {
             return OneapiMultiResult.fail("Provider not found");
         }
-        String name = selected.getName();
+        
         QueryWrapper<OneapiAccountDO> queryAccount = new QueryWrapper<>();
-        queryAccount.eq("name", name);
+        queryAccount.eq("provider_code", selected.getCode());
         List<OneapiAccountDO> accounts = accountMapper.selectList(queryAccount);
         OneapiMultiResult<OneapiAccountDO> result = OneapiMultiResult.success(accounts);
-        result.addParam("name", name);
+        result.addParam("providerId", id);
+        result.addParam("providerCode", selected.getCode());
+        result.addParam("name", selected.getName());
         return result;
     }
 
@@ -108,6 +110,16 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
         account.setGmtModified(new Date());
         account.setStatus(enable);
         accountMapper.updateById(account);
+        return OneapiSingleResult.success();
+    }
+
+    @Override
+    public OneapiSingleResult<Boolean> deleteAccount(Long id) {
+        OneapiAccountDO account = accountMapper.selectById(id);
+        if (account == null) {
+            return OneapiSingleResult.fail("Account not found");
+        }
+        accountMapper.deleteById(id);
         return OneapiSingleResult.success();
     }
 }

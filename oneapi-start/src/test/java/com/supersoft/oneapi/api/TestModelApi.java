@@ -21,7 +21,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @Slf4j
 public class TestModelApi {
     private static final String BASE_URL = "http://localhost:7001/v1";
-    private static final String OPENAI_API_KEY = "sk-oneapi-oneapi";
+    private static final String OPENAI_API_KEY = "sk-oneapi-default-token-2024";
 
     OpenAiClient client = OpenAiClient
             .builder()
