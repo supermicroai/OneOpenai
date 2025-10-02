@@ -96,7 +96,7 @@ public class TestModelApi {
      */
     public void ocrTest() {
         String data = JSON.toJSONString(Map.of(
-                "url", "https://xx/xx.jpg",
+                "url", "https://tc.z.wiki/autoupload/f/vn25-tb2th3ipZ6BVJ3qt1dp1U-2uSN2DL7hMUxDA4Wyl5f0KlZfm6UsKj-HyTuv/20251001/LBGM/555X76/test.png/webp",
                 "model", "ocr-ali-v1"
         ));
         Map<String, String> head = getHead();
