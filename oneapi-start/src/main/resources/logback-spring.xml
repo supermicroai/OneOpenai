@@ -41,45 +41,6 @@
         <appender-ref ref="QOS"/>
     </logger>
 
-    <appender name="BACK" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/back.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>back.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>100MB</maxFileSize>
-            <maxHistory>1</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <charset>UTF-8</charset>
-            <pattern>%msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <logger name="com.aliyun.tea" level="ERROR" additivity="false">
-        <appender-ref ref="BACK"/>
-    </logger>
-
-
-    <appender name="REQUEST" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/request.log</file>
-        <encoder>
-            <charset>UTF-8</charset>
-            <pattern>%msg%n</pattern>
-        </encoder>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>request.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>100MB</maxFileSize>
-            <maxHistory>1</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <charset>UTF-8</charset>
-            <pattern>%msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <logger name="com.supersoft.oneapi.service.OneapiRequestLogService" level="INFO" additivity="false">
-        <appender-ref ref="REQUEST"/>
-    </logger>
-
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="APPLICATION"/>
