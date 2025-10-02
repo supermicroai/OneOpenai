@@ -50,7 +50,7 @@ public class TestModelApi {
                     }
                     String content = choices.getFirst().delta().content();
                     if (content != null) {
-                        log.info("content: {}", content);
+                        log.debug("content: {}", content);
                         responseBuilder.append(content);
                     }
                 })

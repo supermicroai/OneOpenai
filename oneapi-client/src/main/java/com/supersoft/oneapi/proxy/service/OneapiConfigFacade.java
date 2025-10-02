@@ -5,6 +5,7 @@ import com.supersoft.oneapi.common.OneapiSingleResult;
 import com.supersoft.oneapi.provider.data.OneapiAccountDO;
 import com.supersoft.oneapi.provider.data.OneapiModelDO;
 import com.supersoft.oneapi.provider.data.OneapiProviderDO;
+import com.supersoft.oneapi.token.data.OneapiTokenUsageDO;
 
 public interface OneapiConfigFacade {
     /**
@@ -117,7 +118,7 @@ public interface OneapiConfigFacade {
      * @param pageSize 页大小
      * @return 使用记录列表
      */
-    OneapiMultiResult<com.supersoft.oneapi.token.data.OneapiTokenUsageDO> queryTokenUsageRecords(
+    OneapiMultiResult<OneapiTokenUsageDO> queryTokenUsageRecords(
         String provider, String model, Integer status, String startTime, String endTime, Integer page, Integer pageSize
     );
 }

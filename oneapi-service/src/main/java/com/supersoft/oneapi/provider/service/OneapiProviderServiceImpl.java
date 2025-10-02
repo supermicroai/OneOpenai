@@ -314,18 +314,24 @@ public class OneapiProviderServiceImpl implements OneapiProviderService {
             }
             Map<String, String> modelMap = JSON.parseObject(item.getModels(), new TypeReference<>() {});
             if (MapUtils.isEmpty(modelMap)) {
-                log.info("提供者配置异常: {}", item);
+                if (OneapiCommonUtils.enableLog()) {
+                    log.info("提供者配置异常: {}", item);
+                }
                 return;
             }
             modelMap = toLowerCaseKeys(modelMap);
             List<OneapiAccountDO> providerAccounts = accountMap.get(provider);
             if (CollectionUtils.isEmpty(providerAccounts)) {
-                log.info("提供者{}未提供可用的账号", provider);
+                if (OneapiCommonUtils.enableLog()) {
+                    log.info("提供者{}未提供可用的账号", provider);
+                }
                 return;
             }
             String mapModelName = modelMap.get(modelName.toLowerCase());
             if (StringUtils.isBlank(mapModelName)) {
-                log.debug("提供者{}未提供{}的模型", provider, modelName);
+                if (OneapiCommonUtils.enableLog()) {
+                    log.info("提供者{}未提供{}的模型", provider, modelName);
+                }
                 return;
             }
             // 仅使用有余额的账户
