@@ -7,14 +7,16 @@ import com.supersoft.oneapi.common.OneapiBaseObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.Date;
+
 @EqualsAndHashCode(callSuper = true)
 @Data
 @TableName("oneapi_config")
 public class OneapiConfigDO extends OneapiBaseObject {
     @TableId(value = "id", type = IdType.AUTO)
     Long id;
-    String gmtCreate;
-    String gmtModified;
+    Date gmtCreate;
+    Date gmtModified;
 
     String configGroup;
 

@@ -2,6 +2,7 @@ package com.supersoft.oneapi.proxy.service;
 
 import com.supersoft.oneapi.common.OneapiMultiResult;
 import com.supersoft.oneapi.common.OneapiSingleResult;
+import com.supersoft.oneapi.config.data.OneapiConfigDO;
 import com.supersoft.oneapi.provider.data.OneapiAccountDO;
 import com.supersoft.oneapi.provider.data.OneapiModelDO;
 import com.supersoft.oneapi.provider.data.OneapiProviderDO;
@@ -121,4 +122,17 @@ public interface OneapiConfigFacade {
     OneapiMultiResult<OneapiTokenUsageDO> queryTokenUsageRecords(
         String provider, String model, Integer status, String startTime, String endTime, Integer page, Integer pageSize
     );
+
+    /**
+     * 获取系统配置列表
+     * @return 配置列表
+     */
+    OneapiMultiResult<OneapiConfigDO> getConfigs();
+
+    /**
+     * 更新系统配置
+     * @param config 配置信息
+     * @return 更新结果
+     */
+    OneapiSingleResult<OneapiConfigDO> updateConfig(OneapiConfigDO config);
 }

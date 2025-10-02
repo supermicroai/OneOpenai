@@ -3,6 +3,8 @@ package com.supersoft.oneapi.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.supersoft.oneapi.common.OneapiMultiResult;
 import com.supersoft.oneapi.common.OneapiSingleResult;
+import com.supersoft.oneapi.config.data.OneapiConfigDO;
+import com.supersoft.oneapi.config.mapper.OneapiConfigMapper;
 import com.supersoft.oneapi.provider.data.OneapiAccountDO;
 import com.supersoft.oneapi.provider.data.OneapiModelDO;
 import com.supersoft.oneapi.provider.data.OneapiProviderDO;
@@ -30,6 +32,8 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
     OneapiAccountMapper accountMapper;
     @Resource
     OneapiTokenService oneapiTokenService;
+    @Resource
+    OneapiConfigMapper configMapper;
 
     @Override
     public OneapiMultiResult<OneapiModelDO> getModels() {
@@ -203,5 +207,31 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
     public OneapiMultiResult<OneapiTokenUsageDO> queryTokenUsageRecords(
             String provider, String model, Integer status, String startTime, String endTime, Integer page, Integer pageSize) {
         return oneapiTokenService.queryUsageRecords(provider, model, status, startTime, endTime, page, pageSize);
+    }
+
+    @Override
+    public OneapiMultiResult<OneapiConfigDO> getConfigs() {
+        try {
+            List<OneapiConfigDO> configs = configMapper.selectList(null);
+            return OneapiMultiResult.success(configs);
+        } catch (Exception e) {
+            log.error("获取系统配置异常", e);
+            return OneapiMultiResult.fail("获取系统配置失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public OneapiSingleResult<OneapiConfigDO> updateConfig(OneapiConfigDO config) {
+        try {
+            if (config.getId() == null) {
+                return OneapiSingleResult.fail("配置ID不能为空");
+            }
+            config.setGmtModified(new Date());
+            configMapper.updateById(config);
+            return OneapiSingleResult.success(config);
+        } catch (Exception e) {
+            log.error("更新系统配置异常", e);
+            return OneapiSingleResult.fail("更新系统配置失败: " + e.getMessage());
+        }
     }
 }

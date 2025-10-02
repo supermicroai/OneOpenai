@@ -36,6 +36,12 @@
             </template>
             <span>访问日志</span>
           </a-menu-item>
+          <a-menu-item key="/configs">
+            <template #icon>
+              <SettingOutlined />
+            </template>
+            <span>系统配置</span>
+          </a-menu-item>
         </a-menu>
       </a-layout-sider>
       <a-layout>
@@ -69,6 +75,7 @@ import {
   AppstoreOutlined,
   KeyOutlined,
   FileSearchOutlined,
+  SettingOutlined,
 } from '@ant-design/icons-vue';
 
 const router = useRouter();
@@ -91,6 +98,8 @@ watch(
       selectedKeys.value = ['/tokens'];
     } else if (newPath === '/access-logs') {
       selectedKeys.value = ['/access-logs'];
+    } else if (newPath === '/configs') {
+      selectedKeys.value = ['/configs'];
     } else {
       selectedKeys.value = ['/'];
     }
