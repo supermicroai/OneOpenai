@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
 @Data
 public class OcrRequest extends OneapiResult {
     String model;
-
     String url;
     String type;
+    String clientIp;
 }

@@ -16,6 +16,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
+import org.springframework.http.RequestEntity;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -24,6 +25,8 @@ import java.util.Map;
 public class OneapiHttpUtils {
     private static final CloseableHttpClient httpClient;
     private static final CookieStore cookieStore = new BasicCookieStore();
+    public static final String X_REAL_IP = "X-Real-IP";
+    public static final String X_FORWARDED_FOR = "X-Forwarded-For";
 
     static {
         // 创建连接管理器
@@ -105,5 +108,32 @@ public class OneapiHttpUtils {
             log.error("Failed to get, error={}", e.getMessage());
         }
         return null;
+    }
+    
+    /**
+     * 获取客户端IP地址
+     * 优先级：X-Forwarded-For > X-Real-IP > unknown
+     * 
+     * @param request HTTP请求对象
+     * @return 客户端IP地址
+     */
+    public static String getClientIpAddress(RequestEntity request) {
+        if (request == null) {
+            return "-";
+        }
+        
+        // 优先从 X-Forwarded-For 头获取（代理/负载均衡场景）
+        String xForwardedFor = request.getHeaders().getFirst(X_FORWARDED_FOR);
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(xForwardedFor)) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        
+        // 从 X-Real-IP 头获取（Nginx等代理场景）
+        String xRealIp = request.getHeaders().getFirst(X_REAL_IP);
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(xRealIp)) {
+            return xRealIp;
+        }
+        
+        return "-";
     }
 }

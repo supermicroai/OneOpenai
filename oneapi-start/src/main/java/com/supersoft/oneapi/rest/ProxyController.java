@@ -12,6 +12,7 @@ import com.supersoft.oneapi.proxy.service.OneapiOcrService;
 import com.supersoft.oneapi.service.OneapiRequestService;
 import com.supersoft.oneapi.service.embedding.OneapiEmbeddingServiceProxy;
 import com.supersoft.oneapi.service.ocr.OneapiOcrServiceProxy;
+import com.supersoft.oneapi.util.OneapiHttpUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -50,13 +51,15 @@ public class ProxyController {
             requestService.badRequest(response, "模型不能为空");
             return;
         }
+        // 从 HTTP 请求头获取客户端IP
+        String clientIp = OneapiHttpUtils.getClientIpAddress(request);
         requestService.invokeRetry(response, model, requestBody, provider -> {
             String modelMapping = provider.getModelMapping();
             requestBody.put("model", modelMapping);
             String jsonBody = JSON.toJSONString(requestBody);
             String api = provider.getApi();
             provider.setApi(api + "/chat/completions");
-            return requestService.doRequest(provider, response, jsonBody);
+            return requestService.doRequest(provider, response, jsonBody, clientIp);
         });
     }
 
@@ -82,9 +85,12 @@ public class ProxyController {
             requestService.badRequest(response, "模型不能为空");
             return;
         }
+        // 从 HTTP 请求头获取客户端IP
+        String clientIp = OneapiHttpUtils.getClientIpAddress(request);
         requestService.invokeRetry(response, model, ocrRequest, provider -> {
             String modelMapping = provider.getModelMapping();
             ocrRequest.setModel(modelMapping);
+            ocrRequest.setClientIp(clientIp);
             OneapiOcrService ocrService = OneapiOcrServiceProxy.of(provider);
             if (ocrService == null) {
                 return OneapiSingleResult.fail("未找到可用的ocr服务实现");
@@ -125,6 +131,10 @@ public class ProxyController {
             requestService.badRequest(response, "模型不能为空");
             return;
         }
+        // 从 HTTP 请求头获取客户端IP
+        String clientIp = OneapiHttpUtils.getClientIpAddress(request);
+        // 设置客户端IP到请求对象中
+        embeddingRequest.setClientIp(clientIp);
         requestService.invokeRetry(response, model, embeddingRequest, provider -> {
             OneapiEmbeddingService embeddingService = OneapiEmbeddingServiceProxy.of(provider);
             if (embeddingService == null) {

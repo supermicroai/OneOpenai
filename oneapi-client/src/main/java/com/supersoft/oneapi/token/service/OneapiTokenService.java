@@ -5,7 +5,7 @@ import com.supersoft.oneapi.common.OneapiSingleResult;
 import com.supersoft.oneapi.token.data.OneapiTokenDO;
 import com.supersoft.oneapi.token.data.OneapiTokenUsageDO;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -23,7 +23,7 @@ public interface OneapiTokenService {
      * @return 创建结果
      */
     OneapiSingleResult<OneapiTokenDO> createToken(String name, String description, 
-                                                  LocalDateTime expireTime, Long maxUsage, String creator);
+                                                  Date expireTime, Long maxUsage, String creator);
     
     /**
      * 删除令牌
@@ -91,7 +91,7 @@ public interface OneapiTokenService {
      * @param endTime 结束时间
      * @param page 页码
      * @param pageSize 页大小
-     * @return 使用记录列表
+     * @return 使用记录列表和总数
      */
     OneapiMultiResult<OneapiTokenUsageDO> queryUsageRecords(String provider, String model, 
                                                            Integer status, String startTime, 

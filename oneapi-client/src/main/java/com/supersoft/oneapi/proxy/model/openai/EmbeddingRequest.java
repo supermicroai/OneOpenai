@@ -11,4 +11,5 @@ import java.util.List;
 public class EmbeddingRequest extends OneapiBaseObject {
     List<String> input;
     String model;
+    String clientIp;
 }

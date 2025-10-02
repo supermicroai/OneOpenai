@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 public class OneapiMultiResult<T> extends OneapiResult {
     List<T> data;
-    int total;
+    long total;
 
     public static <T> OneapiMultiResult<T> success(List<T> data) {
         OneapiMultiResult multiResult = new OneapiMultiResult();
@@ -19,7 +19,7 @@ public class OneapiMultiResult<T> extends OneapiResult {
         return multiResult;
     }
 
-    public static <T> OneapiMultiResult<T> success(List<T> data, int total) {
+    public static <T> OneapiMultiResult<T> success(List<T> data, long total) {
         OneapiMultiResult multiResult = new OneapiMultiResult();
         multiResult.data = data;
         multiResult.total = total;

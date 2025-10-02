@@ -73,7 +73,7 @@ public class OneapiAliyunOcrServiceImpl implements OneapiOcrService {
         if (StringUtils.isBlank(url)) {
             return null;
         }
-        long startTime = System.currentTimeMillis();
+        String clientIp = request.getClientIp();
         try {
             RecognizeGeneralRequest generalRequest = new RecognizeGeneralRequest();
             generalRequest.setBody(getInputStreamFromUrl(url));
@@ -102,12 +102,12 @@ public class OneapiAliyunOcrServiceImpl implements OneapiOcrService {
                     result.setBlocks(list);
                 }
                 result.setContent(ocrResponse.getContent());
-                requestLogService.requestLog(startTime, providerItem, request, result);
+                requestLogService.requestLog(providerItem, JSON.toJSONString(result), null, clientIp);
                 return result;
             }
         } catch (Exception e) {
             log.error("ocr error", e);
-            requestLogService.requestLog(startTime, providerItem, request, e);
+            requestLogService.requestLog(providerItem, null, e, clientIp);
         }
         return null;
     }

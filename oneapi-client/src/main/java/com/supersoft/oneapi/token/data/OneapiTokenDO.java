@@ -7,7 +7,7 @@ import com.supersoft.oneapi.common.OneapiBaseObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 /**
  * 令牌数据对象
@@ -41,7 +41,7 @@ public class OneapiTokenDO extends OneapiBaseObject {
     /**
      * 过期时间，null表示永不过期
      */
-    private LocalDateTime expireTime;
+    private Date expireTime;
     
     /**
      * 最大token数限制，-1表示不限制
@@ -66,5 +66,5 @@ public class OneapiTokenDO extends OneapiBaseObject {
     /**
      * 最后使用时间
      */
-    private LocalDateTime lastUsedTime;
+    private Date lastUsedTime;
 }

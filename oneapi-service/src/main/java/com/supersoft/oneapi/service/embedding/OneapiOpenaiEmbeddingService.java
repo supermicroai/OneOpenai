@@ -36,7 +36,8 @@ public class OneapiOpenaiEmbeddingService implements OneapiEmbeddingService {
 
     @Override
     public EmbeddingResponse embedding(EmbeddingRequest request, OneapiProvider providerItem) {
-        OneapiSingleResult<String> result = requestService.doRequest(providerItem, JSON.toJSONString(request));
+        OneapiSingleResult<String> result = requestService.doRequest(providerItem, JSON.toJSONString(request),
+                request.getClientIp());
         if (result == null || StringUtils.isBlank(result.getData())) {
             throw new RuntimeException("调用embedding失败");
         }

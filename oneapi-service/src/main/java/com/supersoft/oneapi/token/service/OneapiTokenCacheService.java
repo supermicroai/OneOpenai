@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -66,7 +67,7 @@ public class OneapiTokenCacheService {
         }
         
         // 检查过期时间
-        if (token.getExpireTime() != null && token.getExpireTime().isBefore(java.time.LocalDateTime.now())) {
+        if (token.getExpireTime() != null && token.getExpireTime().before(new Date())) {
             return OneapiSingleResult.fail("令牌已过期");
         }
         

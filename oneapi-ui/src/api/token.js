@@ -45,3 +45,11 @@ export function getUsageRecords(limit = 100) {
         data: [limit]
     })
 }
+
+export function queryUsageRecords(provider, model, status, startTime, endTime, page, pageSize) {
+    return request({
+        url: '/service/com.supersoft.oneapi.token.service.OneapiTokenService/queryUsageRecords',
+        method: 'post',
+        data: [provider, model, status, startTime, endTime, page, pageSize]
+    })
+}

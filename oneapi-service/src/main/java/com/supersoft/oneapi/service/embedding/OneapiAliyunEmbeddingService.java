@@ -40,7 +40,8 @@ public class OneapiAliyunEmbeddingService implements OneapiEmbeddingService {
         AliEmbeddingRequest.AliEmbeddingInput embeddingInput = new AliEmbeddingRequest.AliEmbeddingInput();
         embeddingInput.setTexts(request.getInput());
         aliRequest.setInput(embeddingInput);
-        OneapiSingleResult<String> result = requestService.doRequest(providerItem, JSON.toJSONString(aliRequest));
+        OneapiSingleResult<String> result = requestService.doRequest(providerItem, JSON.toJSONString(aliRequest),
+                request.getClientIp());
         String input = result.getData();
         AliEmbeddingResponse aliResponse = JSON.parseObject(input, AliEmbeddingResponse.class);
         EmbeddingResponse response = new EmbeddingResponse();

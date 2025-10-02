@@ -10,10 +10,7 @@ import com.supersoft.oneapi.proxy.model.openai.ChatResponse;
 import com.supersoft.oneapi.token.data.OneapiTokenDO;
 import com.supersoft.oneapi.token.service.OneapiTokenService;
 import com.supersoft.oneapi.token.service.OneapiTokenCacheService;
-import com.supersoft.oneapi.util.OneapiCommonUtils;
-import com.supersoft.oneapi.util.OneapiConfigUtils;
-import com.supersoft.oneapi.util.OneapiDingTalkUtils;
-import com.supersoft.oneapi.util.OneapiServiceLocator;
+import com.supersoft.oneapi.util.*;
 import jakarta.annotation.Resource;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
@@ -83,17 +80,26 @@ public class OneapiRequestService {
     OneapiTokenCacheService tokenCacheService;
 
     public OneapiSingleResult<String> doRequest(OneapiProvider provider,
-                                                HttpServletResponse response, String jsonBody) {
-        return doRequest(provider, response, jsonBody, true);
+                                                HttpServletResponse response, String jsonBody, String clientIp) {
+        return doRequest(provider, response, jsonBody, true, clientIp);
     }
 
-    public OneapiSingleResult<String> doRequest(OneapiProvider provider, String jsonBody) {
-        return doRequest(provider, null, jsonBody);
+    public OneapiSingleResult<String> doRequest(OneapiProvider provider, String jsonBody, String clientIp) {
+        return doRequest(provider, null, jsonBody, true, clientIp);
     }
 
+    /**
+     *
+     * @param provider  api provider
+     * @param response  target redirect stream
+     * @param jsonBody  api request json
+     * @param async
+     * @param clientIp
+     * @return
+     */
     public OneapiSingleResult<String> doRequest(OneapiProvider provider,
                                         HttpServletResponse response,
-                                        String jsonBody, boolean async) {
+                                        String jsonBody, boolean async, String clientIp) {
         if (OneapiCommonUtils.enableLog()) {
             log.info("选取提供节点: {}, 请求体: {}", JSON.toJSONString(provider, true), jsonBody);
         }
@@ -153,7 +159,7 @@ public class OneapiRequestService {
                     }
                 }
                 // 记录调用
-                requestLogService.requestLog(startTime, provider, jsonBody, content);
+                requestLogService.requestLog(provider, content, null, clientIp);
                 return OneapiSingleResult.success(content);
             }
             return OneapiSingleResult.fail("服务返回异常");
@@ -162,7 +168,7 @@ public class OneapiRequestService {
             long duration = System.currentTimeMillis() - startTime;
             providerService.record(provider, duration, false);
             handleException(provider, e);
-            requestLogService.requestLog(startTime, provider, jsonBody, e);
+            requestLogService.requestLog(provider, jsonBody, e, clientIp);
             return OneapiSingleResult.fail("服务调用异常: " + e.getMessage());
         } finally {
             if (OneapiCommonUtils.enableLog()) {
@@ -201,7 +207,7 @@ public class OneapiRequestService {
             OneapiSingleResult<OneapiTokenDO> validateResult = tokenCacheService.validateApiKeyWithCache(apiKey);
             if (validateResult.isSuccess() && validateResult.getData() != null) {
                 // 验证成功，异步记录使用
-                String clientIp = getClientIpAddress(request);
+                String clientIp = OneapiHttpUtils.getClientIpAddress(request);
                 new Thread(() -> {
                     try {
                         tokenService.recordUsage("system", "api-auth", 0, 0, 1, null, clientIp);
@@ -229,23 +235,6 @@ public class OneapiRequestService {
         }
         
         return false;
-    }
-    
-    /**
-     * 获取客户端IP地址
-     */
-    private String getClientIpAddress(RequestEntity request) {
-        String xForwardedFor = request.getHeaders().getFirst("X-Forwarded-For");
-        if (StringUtils.isNotBlank(xForwardedFor)) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        
-        String xRealIp = request.getHeaders().getFirst("X-Real-IP");
-        if (StringUtils.isNotBlank(xRealIp)) {
-            return xRealIp;
-        }
-        
-        return "unknown";
     }
 
     public void badRequest(HttpServletResponse response, String message) {

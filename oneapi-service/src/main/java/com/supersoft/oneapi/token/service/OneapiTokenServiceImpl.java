@@ -1,5 +1,7 @@
 package com.supersoft.oneapi.token.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.supersoft.oneapi.common.OneapiMultiResult;
 import com.supersoft.oneapi.common.OneapiSingleResult;
 import com.supersoft.oneapi.token.data.OneapiTokenDO;
@@ -13,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +35,7 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
     @Override
     @Transactional
     public OneapiSingleResult<OneapiTokenDO> createToken(String name, String description, 
-                                                         LocalDateTime expireTime, Long maxUsage, String creator) {
+                                                         Date expireTime, Long maxUsage, String creator) {
         if (StringUtils.isBlank(name)) {
             return OneapiSingleResult.fail("令牌名称不能为空");
         }
@@ -137,7 +139,7 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
             }
             
             // 检查过期时间
-            if (token.getExpireTime() != null && token.getExpireTime().isBefore(LocalDateTime.now())) {
+            if (token.getExpireTime() != null && token.getExpireTime().before(new Date())) {
                 return OneapiSingleResult.fail("令牌已过期");
             }
             
@@ -169,6 +171,10 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
             usage.setStatus(status);
             usage.setErrorMsg(errorMsg);
             usage.setIpAddress(ipAddress);
+            // 显式设置创建时间和修改时间
+            Date now = new Date();
+            usage.setGmtCreate(now);
+            usage.setGmtModified(now);
             
             int result = usageMapper.insert(usage);
             return OneapiSingleResult.success(result > 0);
@@ -197,9 +203,45 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
     @Override
     public OneapiMultiResult<OneapiTokenUsageDO> queryUsageRecords(String provider, String model, Integer status, String startTime, String endTime, Integer page, Integer pageSize) {
         try {
-            int offset = (page != null && pageSize != null) ? (page - 1) * pageSize : 0;
-            List<OneapiTokenUsageDO> records = usageMapper.selectByConditions(provider, model, status, startTime, endTime, page, pageSize, offset);
-            return OneapiMultiResult.success(records);
+            // 参数验证和默认值设置
+            if (page == null || page < 1) {
+                page = 1;
+            }
+            if (pageSize == null || pageSize < 1) {
+                pageSize = 10;
+            }
+            
+            // 构建查询条件（不包含排序）
+            QueryWrapper<OneapiTokenUsageDO> queryWrapper = new QueryWrapper<>();
+            
+            if (StringUtils.isNotBlank(provider)) {
+                queryWrapper.eq("provider", provider);
+            }
+            if (StringUtils.isNotBlank(model)) {
+                queryWrapper.eq("model", model);
+            }
+            if (status != null) {
+                queryWrapper.eq("status", status);
+            }
+            if (StringUtils.isNotBlank(startTime)) {
+                queryWrapper.ge("gmt_create", startTime);
+            }
+            if (StringUtils.isNotBlank(endTime)) {
+                queryWrapper.le("gmt_create", endTime);
+            }
+            
+            // 先查询总数（不包含ORDER BY）
+            Long total = usageMapper.selectCount(queryWrapper);
+            
+            // 为分页查询添加排序
+            queryWrapper.orderByDesc("gmt_create");
+            
+            // 分页查询
+            Page<OneapiTokenUsageDO> pageParam = new Page<>(page, pageSize);
+            Page<OneapiTokenUsageDO> pageResult = usageMapper.selectPage(pageParam, queryWrapper);
+            
+            // 构建返回结果
+            return OneapiMultiResult.success(pageResult.getRecords(), total);
         } catch (Exception e) {
             log.error("查询访问日志异常", e);
             return OneapiMultiResult.fail("查询访问日志异常：" + e.getMessage());

@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * 令牌使用记录数据对象
@@ -62,4 +63,14 @@ public class OneapiTokenUsageDO extends OneapiBaseObject {
      * 客户端IP地址
      */
     private String ipAddress;
+    
+    /**
+     * 创建时间
+     */
+    private Date gmtCreate;
+    
+    /**
+     * 修改时间
+     */
+    private Date gmtModified;
 }

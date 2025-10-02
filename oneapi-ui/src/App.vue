@@ -30,6 +30,12 @@
             </template>
             <span>令牌管理</span>
           </a-menu-item>
+          <a-menu-item key="/access-logs">
+            <template #icon>
+              <FileSearchOutlined />
+            </template>
+            <span>访问日志</span>
+          </a-menu-item>
         </a-menu>
       </a-layout-sider>
       <a-layout>
@@ -62,6 +68,7 @@ import {
   CloudServerOutlined,
   AppstoreOutlined,
   KeyOutlined,
+  FileSearchOutlined,
 } from '@ant-design/icons-vue';
 
 const router = useRouter();
@@ -82,6 +89,8 @@ watch(
       selectedKeys.value = ['/models'];
     } else if (newPath === '/tokens') {
       selectedKeys.value = ['/tokens'];
+    } else if (newPath === '/access-logs') {
+      selectedKeys.value = ['/access-logs'];
     } else {
       selectedKeys.value = ['/'];
     }
