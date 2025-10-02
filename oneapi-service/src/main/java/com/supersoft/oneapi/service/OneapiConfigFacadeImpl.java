@@ -37,7 +37,9 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
 
     @Override
     public OneapiMultiResult<OneapiModelDO> getModels() {
-        List<OneapiModelDO> models = modelMapper.selectList(null);  // 获取所有模型，包括禁用的
+        QueryWrapper<OneapiModelDO> queryWrapper = new QueryWrapper<>();
+        queryWrapper.orderByAsc("type", "vendor", "name"); // 按类型、厂商、名称排序
+        List<OneapiModelDO> models = modelMapper.selectList(queryWrapper);
         return OneapiMultiResult.success(models);
     }
     

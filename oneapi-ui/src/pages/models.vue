@@ -84,10 +84,10 @@
           </a-tag>
         </template>
         <template v-else-if="column.dataIndex === 'inputPrice'">
-          {{ record.inputPrice ? '$' + record.inputPrice + '/1M tokens' : '-' }}
+          {{ record.inputPrice || '-' }}
         </template>
         <template v-else-if="column.dataIndex === 'outputPrice'">
-          {{ record.outputPrice ? '$' + record.outputPrice + '/1M tokens' : '-' }}
+          {{ record.outputPrice || '-' }}
         </template>
         <template v-else-if="column.dataIndex === 'enabled'">
           <a-switch 
@@ -150,19 +150,19 @@
             <a-select-option value="ocr">OCR</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item label="输入Token价格" name="inputPrice">
+        <a-form-item label="输入Token价格(美元/1M)" name="inputPrice">
           <a-input-number 
             v-model:value="currentModel.inputPrice" 
-            placeholder="请输入输入Token价格（美元/1M token）"
+            placeholder="请输入输入Token价格"
             :min="0"
             :precision="2"
             style="width: 100%"
           />
         </a-form-item>
-        <a-form-item label="输出Token价格" name="outputPrice">
+        <a-form-item label="输出Token价格(美元/1M)" name="outputPrice">
           <a-input-number 
             v-model:value="currentModel.outputPrice" 
-            placeholder="请输入输出Token价格（美元/1M token）"
+            placeholder="请输入输出Token价格"
             :min="0"
             :precision="2"
             style="width: 100%"
@@ -232,7 +232,7 @@ const columns = [
   {
     title: 'ID',
     dataIndex: 'id',
-    width: 80,
+    width: 60,
   },
   {
     title: '模型名称',
@@ -250,14 +250,14 @@ const columns = [
     width: 100,
   },
   {
-    title: '输入价格',
+    title: '输入价格(美元/1M)',
     dataIndex: 'inputPrice',
-    width: 120,
+    width: 200,
   },
   {
-    title: '输出价格',
+    title: '输出价格(美元/1M)',
     dataIndex: 'outputPrice',
-    width: 120,
+    width: 200,
   },
   {
     title: '描述',
@@ -324,6 +324,17 @@ const applyFilters = () => {
   if (typeFilter.value) {
     filtered = filtered.filter(model => model.type === typeFilter.value);
   }
+  
+  // Sort by type, vendor, and name
+  filtered.sort((a, b) => {
+    if (a.type !== b.type) {
+      return (a.type || '').localeCompare(b.type || '');
+    }
+    if (a.vendor !== b.vendor) {
+      return (a.vendor || '').localeCompare(b.vendor || '');
+    }
+    return (a.name || '').localeCompare(b.name || '');
+  });
   
   filteredModelList.value = filtered;
   pagination.value.total = filtered.length;

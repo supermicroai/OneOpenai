@@ -113,7 +113,7 @@
       @ok="handleEditSubmit"
       @cancel="handleEditCancel"
       :confirm-loading="editLoading"
-      :width="800"
+      :width="1000"
       ok-text="保存"
       cancel-text="取消"
     >
@@ -123,7 +123,7 @@
         :rules="editRules"
         labelAlign="left" 
         :colon="false" 
-        :labelCol="{ style: { width: '150px' } }"
+        :labelCol="{ style: { width: '100px' } }"
       >
         <a-form-item label="名称" name="name">
           <a-input v-model:value="currentProvider.name" />
@@ -167,7 +167,7 @@
                 <template v-else-if="column.dataIndex === 'inputPrice'">
                   <a-input-number 
                     v-model:value="record.inputPrice" 
-                    placeholder="输入价格（美元/1M token）"
+                    placeholder="输入价格"
                     :min="0"
                     :precision="2"
                     style="width: 100%"
@@ -176,7 +176,7 @@
                 <template v-else-if="column.dataIndex === 'outputPrice'">
                   <a-input-number 
                     v-model:value="record.outputPrice" 
-                    placeholder="输出价格（美元/1M token）"
+                    placeholder="输出价格"
                     :min="0"
                     :precision="2"
                     style="width: 100%"
@@ -557,6 +557,9 @@ const editRules = {
   name: [
     { required: true, message: '请输入提供商名称', trigger: 'blur' }
   ],
+  api: [
+    { required: true, message: '请输入API地址', trigger: 'blur' }
+  ],
   type: [
     { required: true, message: '请选择模型类型', trigger: 'change' }
   ]
@@ -567,27 +570,27 @@ const modelColumns = [
   {
     title: '模型名称',
     dataIndex: 'name',
-    width: 150,
+    width: 120,
   },
   {
     title: '别名',
     dataIndex: 'value',
-    width: 120,
+    width: 200,
   },
   {
-    title: '输入价格',
+    title: '输入价格(美元/1M)',
     dataIndex: 'inputPrice',
     width: 120,
   },
   {
-    title: '输出价格',
+    title: '输出价格(美元/1M)',
     dataIndex: 'outputPrice',
     width: 120,
   },
   {
     title: '操作',
     dataIndex: 'action',
-    width: 100,
+    width: 60,
   }
 ];
 
