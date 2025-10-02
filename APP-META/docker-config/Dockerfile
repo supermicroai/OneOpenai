@@ -1,4 +1,4 @@
-FROM supermicroai/java-base-jdk21
+FROM supermicroai/almalinux9-jdk21
 
 ARG APP_NAME
 ENV APP_NAME=oneapi

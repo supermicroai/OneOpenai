@@ -1,0 +1,31 @@
+# 基于 AlmaLinux 9 官方镜像（支持多架构，CentOS 的继任者）
+FROM almalinux:9
+
+# 设置维护者信息
+LABEL maintainer="OneOpenai Team"
+LABEL description="Java Base Image with JDK 21 for OneOpenai Project based on AlmaLinux 9"
+LABEL version="1.0.0"
+
+# 设置环境变量
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk
+ENV PATH=$JAVA_HOME/bin:$PATH
+ENV LANG=zh_CN.UTF-8
+ENV LC_ALL=zh_CN.UTF-8
+ENV TZ=Asia/Shanghai
+
+# 更新系统并安装 JDK 21 和必要的包
+RUN yum update -y && \
+    # 安装 JDK 21
+    yum install -y java-21-openjdk java-21-openjdk-devel && \
+    # 安装必要工具（解决 curl 冲突）
+    yum install -y tzdata \
+    && yum clean all \
+    && rm -rf /var/cache/yum
+
+RUN java -version
+
+# 设置时区
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 默认命令
+CMD ["bash"]
