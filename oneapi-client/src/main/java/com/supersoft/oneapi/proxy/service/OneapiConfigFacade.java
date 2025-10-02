@@ -12,6 +12,42 @@ public interface OneapiConfigFacade {
      * @return
      */
     OneapiMultiResult<OneapiModelDO> getModels();
+    
+    /**
+     * 添加模型
+     * @param model 模型信息
+     * @return
+     */
+    OneapiSingleResult<OneapiModelDO> addModel(OneapiModelDO model);
+    
+    /**
+     * 更新模型
+     * @param model 模型信息
+     * @return
+     */
+    OneapiSingleResult<OneapiModelDO> updateModel(OneapiModelDO model);
+    
+    /**
+     * 删除模型
+     * @param modelId 模型ID
+     * @return
+     */
+    OneapiSingleResult<Boolean> deleteModel(Long modelId);
+    
+    /**
+     * 切换模型状态
+     * @param modelId 模型ID
+     * @param enabled 是否启用
+     * @return
+     */
+    OneapiSingleResult<Boolean> toggleModel(Long modelId, Boolean enabled);
+    
+    /**
+     * 获取已启用的模型列表
+     * @param type 模型类型
+     * @return
+     */
+    OneapiMultiResult<OneapiModelDO> getEnabledModels(String type);
 
     /**
      * 获取支持的提供商列表

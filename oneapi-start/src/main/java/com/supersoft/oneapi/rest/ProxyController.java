@@ -36,7 +36,7 @@ public class ProxyController {
             return;
         }
         boolean checkedApiKey = requestService.checkApiKey(request, response);
-        if (checkedApiKey) {
+        if (!checkedApiKey) {
             requestService.badRequest(response, "apiKey验证失败");
             return;
         }

@@ -162,7 +162,25 @@
                   <span>{{ record.name }}</span>
                 </template>
                 <template v-else-if="column.dataIndex === 'value'">
-                  <a-input v-model:value="record.value" />
+                  <a-input v-model:value="record.value" placeholder="模型别名" />
+                </template>
+                <template v-else-if="column.dataIndex === 'inputPrice'">
+                  <a-input-number 
+                    v-model:value="record.inputPrice" 
+                    placeholder="输入价格（美元/1M token）"
+                    :min="0"
+                    :precision="2"
+                    style="width: 100%"
+                  />
+                </template>
+                <template v-else-if="column.dataIndex === 'outputPrice'">
+                  <a-input-number 
+                    v-model:value="record.outputPrice" 
+                    placeholder="输出价格（美元/1M token）"
+                    :min="0"
+                    :precision="2"
+                    style="width: 100%"
+                  />
                 </template>
                 <template v-else-if="column.dataIndex === 'action'">
                   <a-button type="link" size="small" danger @click="removeEditModel(record.name)">
@@ -554,7 +572,17 @@ const modelColumns = [
   {
     title: '别名',
     dataIndex: 'value',
-    width: 200,
+    width: 120,
+  },
+  {
+    title: '输入价格',
+    dataIndex: 'inputPrice',
+    width: 120,
+  },
+  {
+    title: '输出价格',
+    dataIndex: 'outputPrice',
+    width: 120,
   },
   {
     title: '操作',
@@ -664,11 +692,26 @@ const showEditModal = async (record) => {
 
 // Filter edit models
 const filterEditModels = () => {
-  filteredEditModelList.value = Object.entries(currentProvider.value.models || {})
-    .map(([modelName, modelAlias]) => ({
-      name: modelName,
-      value: modelAlias
-    }))
+  const models = currentProvider.value.models || {};
+  filteredEditModelList.value = Object.entries(models)
+    .map(([modelName, modelConfig]) => {
+      // 如果模型配置是字符串，转为对象
+      if (typeof modelConfig === 'string') {
+        return {
+          name: modelName,
+          value: modelConfig,
+          inputPrice: null,
+          outputPrice: null
+        };
+      }
+      // 如果是对象，直接使用
+      return {
+        name: modelName,
+        value: modelConfig.alias || modelConfig.value || modelName,
+        inputPrice: modelConfig.inputPrice || null,
+        outputPrice: modelConfig.outputPrice || null
+      };
+    })
     .filter(item => item.value && item.value.trim() !== '');
 };
 
@@ -678,10 +721,21 @@ const handleEditSubmit = async () => {
     await editFormRef.value.validate();
     editLoading.value = true;
     
-    // Convert models back to JSON string
+    // Convert models back to the new format with price support
+    const modelsObject = {};
+    filteredEditModelList.value.forEach(model => {
+      if (model.value && model.value.trim()) {
+        modelsObject[model.name] = {
+          alias: model.value,
+          inputPrice: model.inputPrice || null,
+          outputPrice: model.outputPrice || null
+        };
+      }
+    });
+    
     const providerToUpdate = {
       ...currentProvider.value,
-      models: JSON.stringify(currentProvider.value.models)
+      models: JSON.stringify(modelsObject)
     };
     
     await updateProvider(providerToUpdate);
@@ -743,11 +797,23 @@ const handleAddModel = async () => {
 
   addModelLoading.value = true;
   try {
-    currentProvider.value.models[selectedModel.value] = modelAlias.value.trim();
+    // 使用新的对象结构支持价格配置
+    const modelConfig = {
+      alias: modelAlias.value.trim(),
+      inputPrice: null,
+      outputPrice: null
+    };
+    
+    currentProvider.value.models[selectedModel.value] = modelConfig;
+    
+    // Update the filtered list
     filterEditModels();
+    
+    // Close modal
     addModelModalVisible.value = false;
     selectedModel.value = '';
     modelAlias.value = '';
+    
     message.success('模型映射添加成功');
   } catch (error) {
     message.error('添加失败: ' + error.message);

@@ -83,6 +83,12 @@
             {{ typeMapping[record.type] }}
           </a-tag>
         </template>
+        <template v-else-if="column.dataIndex === 'inputPrice'">
+          {{ record.inputPrice ? '$' + record.inputPrice + '/1M tokens' : '-' }}
+        </template>
+        <template v-else-if="column.dataIndex === 'outputPrice'">
+          {{ record.outputPrice ? '$' + record.outputPrice + '/1M tokens' : '-' }}
+        </template>
         <template v-else-if="column.dataIndex === 'enabled'">
           <a-switch 
             :checked="record.enable === 1 || record.enable === true"
@@ -144,6 +150,24 @@
             <a-select-option value="ocr">OCR</a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item label="输入Token价格" name="inputPrice">
+          <a-input-number 
+            v-model:value="currentModel.inputPrice" 
+            placeholder="请输入输入Token价格（美元/1M token）"
+            :min="0"
+            :precision="2"
+            style="width: 100%"
+          />
+        </a-form-item>
+        <a-form-item label="输出Token价格" name="outputPrice">
+          <a-input-number 
+            v-model:value="currentModel.outputPrice" 
+            placeholder="请输入输出Token价格（美元/1M token）"
+            :min="0"
+            :precision="2"
+            style="width: 100%"
+          />
+        </a-form-item>
         <a-form-item label="描述" name="description">
           <a-textarea 
             v-model:value="currentModel.description" 
@@ -192,6 +216,8 @@ const currentModel = reactive({
   name: '',
   vendor: '',
   type: '',
+  inputPrice: null,
+  outputPrice: null,
   description: '',
   enabled: true
 });
@@ -222,6 +248,16 @@ const columns = [
     title: '类型',
     dataIndex: 'type',
     width: 100,
+  },
+  {
+    title: '输入价格',
+    dataIndex: 'inputPrice',
+    width: 120,
+  },
+  {
+    title: '输出价格',
+    dataIndex: 'outputPrice',
+    width: 120,
   },
   {
     title: '描述',
@@ -369,6 +405,8 @@ const resetForm = () => {
     name: '',
     vendor: '',
     type: '',
+    inputPrice: null,
+    outputPrice: null,
     description: '',
     enabled: true
   });

@@ -33,10 +33,82 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
 
     @Override
     public OneapiMultiResult<OneapiModelDO> getModels() {
-        QueryWrapper<OneapiModelDO> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("enable", true);
-        List<OneapiModelDO> models = modelMapper.selectList(queryWrapper);
+        List<OneapiModelDO> models = modelMapper.selectList(null);  // 获取所有模型，包括禁用的
         return OneapiMultiResult.success(models);
+    }
+    
+    @Override
+    public OneapiSingleResult<OneapiModelDO> addModel(OneapiModelDO model) {
+        try {
+            Date now = new Date();
+            model.setGmtCreate(now);
+            model.setGmtModified(now);
+            modelMapper.insert(model);
+            return OneapiSingleResult.success(model);
+        } catch (Exception e) {
+            log.error("添加模型异常", e);
+            return OneapiSingleResult.fail("添加模型失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public OneapiSingleResult<OneapiModelDO> updateModel(OneapiModelDO model) {
+        try {
+            model.setGmtModified(new Date());
+            modelMapper.updateById(model);
+            return OneapiSingleResult.success(model);
+        } catch (Exception e) {
+            log.error("更新模型异常", e);
+            return OneapiSingleResult.fail("更新模型失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public OneapiSingleResult<Boolean> deleteModel(Long modelId) {
+        try {
+            OneapiModelDO model = modelMapper.selectById(modelId);
+            if (model == null) {
+                return OneapiSingleResult.fail("模型不存在");
+            }
+            modelMapper.deleteById(modelId);
+            return OneapiSingleResult.success(true);
+        } catch (Exception e) {
+            log.error("删除模型异常", e);
+            return OneapiSingleResult.fail("删除模型失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public OneapiSingleResult<Boolean> toggleModel(Long modelId, Boolean enabled) {
+        try {
+            OneapiModelDO model = modelMapper.selectById(modelId);
+            if (model == null) {
+                return OneapiSingleResult.fail("模型不存在");
+            }
+            model.setEnable(enabled);
+            model.setGmtModified(new Date());
+            modelMapper.updateById(model);
+            return OneapiSingleResult.success(true);
+        } catch (Exception e) {
+            log.error("切换模型状态异常", e);
+            return OneapiSingleResult.fail("切换模型状态失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public OneapiMultiResult<OneapiModelDO> getEnabledModels(String type) {
+        try {
+            QueryWrapper<OneapiModelDO> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("enable", true);
+            if (type != null && !type.trim().isEmpty()) {
+                queryWrapper.eq("type", type);
+            }
+            List<OneapiModelDO> models = modelMapper.selectList(queryWrapper);
+            return OneapiMultiResult.success(models);
+        } catch (Exception e) {
+            log.error("获取已启用模型异常", e);
+            return OneapiMultiResult.fail("获取已启用模型失败: " + e.getMessage());
+        }
     }
 
     @Override

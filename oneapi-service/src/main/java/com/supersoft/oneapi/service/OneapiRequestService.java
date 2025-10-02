@@ -205,35 +205,10 @@ public class OneapiRequestService {
         // 首先尝试使用新的令牌缓存系统验证（性能优化）
         try {
             OneapiSingleResult<OneapiTokenDO> validateResult = tokenCacheService.validateApiKeyWithCache(apiKey);
-            if (validateResult.isSuccess() && validateResult.getData() != null) {
-                // 验证成功，异步记录使用
-                String clientIp = OneapiHttpUtils.getClientIpAddress(request);
-                new Thread(() -> {
-                    try {
-                        tokenService.recordUsage("system", "api-auth", 0, 0, 1, null, clientIp);
-                    } catch (Exception e) {
-                        log.error("异步记录API验证使用失败", e);
-                    }
-                }).start();
-                return false; // 验证通过
-            }
+            return validateResult != null && validateResult.isSuccess();
         } catch (Exception e) {
             log.warn("令牌缓存验证异常，尝试使用旧的验证方式: {}", e.getMessage());
         }
-        
-        // 如果新系统验证失败，回退到旧的配置验证方式
-        String apiKeys = OneapiConfigUtils.getCacheConfig("oneapi.apiKeys", String.class);
-        if (StringUtils.isBlank(apiKeys)) {
-            badRequest(response, "授权信息验证失败");
-            return true;
-        }
-        
-        List<String> keys = JSON.parseArray(apiKeys, String.class);
-        if (!keys.contains(apiKey)) {
-            badRequest(response, "授权信息验证失败");
-            return true;
-        }
-        
         return false;
     }
 

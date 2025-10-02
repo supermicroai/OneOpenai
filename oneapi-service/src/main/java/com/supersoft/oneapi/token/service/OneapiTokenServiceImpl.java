@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.supersoft.oneapi.common.OneapiMultiResult;
 import com.supersoft.oneapi.common.OneapiSingleResult;
+import com.supersoft.oneapi.service.OneapiPricingService;
 import com.supersoft.oneapi.token.data.OneapiTokenDO;
 import com.supersoft.oneapi.token.data.OneapiTokenUsageDO;
 import com.supersoft.oneapi.token.mapper.OneapiTokenMapper;
@@ -31,6 +32,9 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
     
     @Resource
     private OneapiTokenUsageMapper usageMapper;
+    
+    @Resource
+    private OneapiPricingService pricingService;
     
     @Override
     @Transactional
@@ -167,7 +171,13 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
             usage.setModel(model);
             usage.setRequestTokens(requestTokens == null ? 0 : requestTokens);
             usage.setResponseTokens(responseTokens == null ? 0 : responseTokens);
-            usage.setCost(BigDecimal.ZERO);
+            
+            // 使用价格计算服务计算成本
+            BigDecimal cost = pricingService.calculateCost(provider, model, requestTokens, responseTokens);
+            log.debug("价格计算结果: provider={}, model={}, requestTokens={}, responseTokens={}, cost={}", 
+                provider, model, requestTokens, responseTokens, cost);
+            usage.setCost(cost);
+            
             usage.setStatus(status);
             usage.setErrorMsg(errorMsg);
             usage.setIpAddress(ipAddress);

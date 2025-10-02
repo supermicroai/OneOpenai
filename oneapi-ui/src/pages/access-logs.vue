@@ -281,7 +281,20 @@ const formatCost = (cost) => {
   if (cost === null || cost === undefined) {
     return '-';
   }
-  return `¥${Number(cost).toFixed(4)}`;
+  const numCost = Number(cost);
+  
+  // 如果成本为0，显示0.0000
+  if (numCost === 0) {
+    return '$0';
+  }
+  
+  // 如果成本大于0但小于0.0001，显示<0.0001
+  if (numCost > 0 && numCost < 0.00001) {
+    return '小于 $0.00001';
+  }
+  
+  // 其他情况显示四位小数
+  return `$${numCost.toFixed(5)}`;
 };
 
 const formatDateTime = (dateTime) => {
