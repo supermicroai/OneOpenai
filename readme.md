@@ -34,7 +34,6 @@ Fully compatible with the OpenAI LLM proxy interface. Please refer to the [OpenA
 | Configuration Key    | Example Value                                        | Description          |
 |----------------------|------------------------------------------------------|----------------------|
 | oneapi.model.default | claude-3-haiku                                       | Default model name   |
-| oneapi.apiKeys       | ["sk-oneapi-oneapi"]                                 | API key              |
 | log.enable           | true                                                 | Detailed log switch  |
 | oneapi.alert.ding    | https://oapi.dingtalk.com/robot/send?access_token=xx | DingTalk alert robot |
 | oneapi.success.rt    | 60000                                                | API timeout          |

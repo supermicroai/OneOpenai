@@ -35,7 +35,6 @@ OneAPI是一个openai代理应用，旨在提供统一的openai协议下的llm�
 | 配置键                  | 样例值                                                  | 配置说明    |
 |----------------------|------------------------------------------------------|---------|
 | oneapi.model.default | claude-3-haiku                                       | 默认模型名称  |
-| oneapi.apiKeys       | ["sk-oneapi-oneapi"]                                 | apikey  |
 | log.enable           | true                                                 | 详细日志开关  |
 | oneapi.alert.ding    | https://oapi.dingtalk.com/robot/send?access_token=xx | 钉钉告警机器人 |
 | oneapi.success.rt    | 60000                                                | 接口超时时间  |
