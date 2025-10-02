@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: oneapi
-          image: supermicroai/oneapi:20241223
+          image: supermicroai/oneapi
           resources:
             requests:
               memory: 1024Mi

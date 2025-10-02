@@ -69,9 +69,12 @@ Fully compatible with the OpenAI LLM proxy interface. Please refer to the [OpenA
     mvn clean package -Pdev
     ```
 3. Build the image
+- Change account from supermicroai to your account
     ```bash
     cd APP-META/docker-config
-    docker build -t account/oneapi:tag .
+    docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile.jdk21 -t supermicroai/almalinux9-jdk21:$(date +%Y%m%d) -t supermicroai/almalinux9-jdk21:latest .
+    docker buildx build --platform linux/amd64,linux/arm64 -t supermicroai/oneapi:$(date +%Y%m%d) -t supermicroai/oneapi:latest .
+    docker buildx build --platform linux/amd64,linux/arm64 -t supermicroai/oneapi:$(date +%Y%m%d) -t supermicroai/oneapi:latest --push .
     ```
 ## Deployment Methods
 
