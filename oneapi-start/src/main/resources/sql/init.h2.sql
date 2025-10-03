@@ -137,6 +137,8 @@ create table oneapi_token
     expire_time  timestamp null comment '过期时间，null表示永不过期',
     max_usage    bigint default -1 comment '最大token数限制，-1表示不限制',
     token_usage  bigint default 0 comment '当前token使用量',
+    max_cost_limit decimal(10,6) default -1 comment '最大费用限制，-1表示不限制',
+    current_cost_usage decimal(10,6) default 0 comment '当前费用使用量',
     status       int default 1 comment '状态：1启用，0禁用',
     creator      varchar(64) comment '创建者',
     last_used_time timestamp null comment '最后使用时间'
@@ -148,6 +150,7 @@ create table oneapi_token_usage
     id           int auto_increment primary key,
     gmt_create   timestamp default CURRENT_TIMESTAMP,
     gmt_modified timestamp default CURRENT_TIMESTAMP,
+    token_id     int comment '令牌ID',
     provider     varchar(64) comment '服务提供商',
     model        varchar(64) comment '使用的模型',
     request_tokens int default 0 comment '请求令牌数',

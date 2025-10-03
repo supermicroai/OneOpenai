@@ -25,6 +25,11 @@ public class OneapiTokenUsageDO extends OneapiBaseObject {
     private Integer id;
     
     /**
+     * 令牌ID
+     */
+    private Integer tokenId;
+    
+    /**
      * 服务提供商
      */
     private String provider;

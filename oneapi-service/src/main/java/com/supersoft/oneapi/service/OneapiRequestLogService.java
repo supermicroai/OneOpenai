@@ -31,6 +31,7 @@ public class OneapiRequestLogService {
                 return;
             }
             try {
+                Integer tokenId = provider.getTokenId();
                 String providerName = provider.getName();
                 String model = provider.getModel();
                 int requestTokens = 0;
@@ -54,8 +55,12 @@ public class OneapiRequestLogService {
                 }
 
                 // 记录到数据库
-                tokenService.recordUsage(providerName, model, requestTokens, responseTokens,
-                        status, errorMsg, clientIp != null ? clientIp : "unknown");
+                if (tokenId != null) {
+                    tokenService.recordUsage(tokenId, providerName, model, requestTokens, responseTokens,
+                            status, errorMsg, clientIp != null ? clientIp : "unknown");
+                } else {
+                    log.warn("令牌ID为空，无法记录使用情况");
+                }
 
             } catch (Exception e) {
                 log.error("记录使用情况到数据库失败", e);

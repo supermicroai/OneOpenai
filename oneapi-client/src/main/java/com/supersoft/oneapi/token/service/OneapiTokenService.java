@@ -5,6 +5,7 @@ import com.supersoft.oneapi.common.OneapiSingleResult;
 import com.supersoft.oneapi.token.data.OneapiTokenDO;
 import com.supersoft.oneapi.token.data.OneapiTokenUsageDO;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -19,11 +20,12 @@ public interface OneapiTokenService {
      * @param description 描述
      * @param expireTime 过期时间
      * @param maxUsage 最大使用次数
+     * @param maxCostLimit 最大费用限制
      * @param creator 创建者
      * @return 创建结果
      */
     OneapiSingleResult<OneapiTokenDO> createToken(String name, String description, 
-                                                  Date expireTime, Long maxUsage, String creator);
+                                                  Date expireTime, Long maxUsage, BigDecimal maxCostLimit, String creator);
     
     /**
      * 删除令牌
@@ -61,6 +63,7 @@ public interface OneapiTokenService {
     
     /**
      * 记录令牌使用
+     * @param tokenId 令牌ID
      * @param provider 服务提供商
      * @param model 模型
      * @param requestTokens 请求令牌数
@@ -70,10 +73,12 @@ public interface OneapiTokenService {
      * @param ipAddress IP地址
      * @return 记录结果
      */
-    OneapiSingleResult<Boolean> recordUsage(String provider, String model, 
+    OneapiSingleResult<Boolean> recordUsage(Integer tokenId, String provider, String model, 
                                            Integer requestTokens, Integer responseTokens, 
                                            Integer status, String errorMsg, 
                                            String ipAddress);
+    
+
     
     /**
      * 获取使用记录

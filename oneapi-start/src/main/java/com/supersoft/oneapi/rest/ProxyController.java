@@ -35,8 +35,8 @@ public class ProxyController {
             requestService.badRequest(response, "入参不能为空");
             return;
         }
-        boolean checkedApiKey = requestService.checkApiKey(request, response);
-        if (!checkedApiKey) {
+        Integer tokenId = requestService.extractTokenId(request, response);
+        if (tokenId == null) {
             requestService.badRequest(response, "apiKey验证失败");
             return;
         }
@@ -54,6 +54,8 @@ public class ProxyController {
         // 从 HTTP 请求头获取客户端IP
         String clientIp = OneapiHttpUtils.getClientIpAddress(request);
         requestService.invokeRetry(response, model, requestBody, provider -> {
+            // 设置tokenId到provider中
+            provider.setTokenId(tokenId);
             String modelMapping = provider.getModelMapping();
             requestBody.put("model", modelMapping);
             String jsonBody = JSON.toJSONString(requestBody);
@@ -70,8 +72,8 @@ public class ProxyController {
             requestService.badRequest(response, "入参不能为空");
             return;
         }
-        boolean checkedApiKey = requestService.checkApiKey(request, response);
-        if (checkedApiKey) {
+        Integer tokenId = requestService.extractTokenId(request, response);
+        if (tokenId == null) {
             requestService.badRequest(response, "apiKey验证失败");
             return;
         }
@@ -88,6 +90,8 @@ public class ProxyController {
         // 从 HTTP 请求头获取客户端IP
         String clientIp = OneapiHttpUtils.getClientIpAddress(request);
         requestService.invokeRetry(response, model, ocrRequest, provider -> {
+            // 设置tokenId到provider中
+            provider.setTokenId(tokenId);
             String modelMapping = provider.getModelMapping();
             ocrRequest.setModel(modelMapping);
             ocrRequest.setClientIp(clientIp);
@@ -116,8 +120,8 @@ public class ProxyController {
             requestService.badRequest(response, "入参不能为空");
             return;
         }
-        boolean checkedApiKey = requestService.checkApiKey(request, response);
-        if (checkedApiKey) {
+        Integer tokenId = requestService.extractTokenId(request, response);
+        if (tokenId == null) {
             requestService.badRequest(response, "apiKey验证失败");
             return;
         }
@@ -136,6 +140,8 @@ public class ProxyController {
         // 设置客户端IP到请求对象中
         embeddingRequest.setClientIp(clientIp);
         requestService.invokeRetry(response, model, embeddingRequest, provider -> {
+            // 设置tokenId到provider中
+            provider.setTokenId(tokenId);
             OneapiEmbeddingService embeddingService = OneapiEmbeddingServiceProxy.of(provider);
             if (embeddingService == null) {
                 return OneapiSingleResult.fail("未找到可用的embedding服务实现");

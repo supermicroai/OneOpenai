@@ -24,6 +24,10 @@ public class OneapiProvider extends OneapiBaseObject {
     String type;
     String note;
     /**
+     * 令牌ID（用于记录使用情况）
+     */
+    Integer tokenId;
+    /**
      * 提供者api
      */
     String api;

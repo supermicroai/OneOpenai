@@ -7,6 +7,7 @@ import com.supersoft.oneapi.common.OneapiBaseObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -52,6 +53,16 @@ public class OneapiTokenDO extends OneapiBaseObject {
      * 当前token使用量
      */
     private Long tokenUsage;
+    
+    /**
+     * 最大费用限制，-1表示不限制
+     */
+    private BigDecimal maxCostLimit;
+    
+    /**
+     * 当前费用使用量
+     */
+    private BigDecimal currentCostUsage;
     
     /**
      * 状态：1启用，0禁用

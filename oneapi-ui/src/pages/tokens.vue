@@ -45,8 +45,18 @@
             {{ record.maxUsage === -1 ? '不限制' : record.maxUsage }}
           </template>
           
+          <template v-if="column.key === 'costLimit'">
+            {{ record.maxCostLimit === -1 || record.maxCostLimit === null ? '不限制' : `$${record.maxCostLimit}` }}
+          </template>
+          
           <template v-if="column.key === 'usage'">
             {{ record.tokenUsage || 0 }} / {{ record.maxUsage === -1 ? '∞' : record.maxUsage }}
+          </template>
+          
+          <template v-if="column.key === 'costUsage'">
+            <span>
+              ${{ record.currentCostUsage || 0 }} / {{ record.maxCostLimit === -1 || record.maxCostLimit === null ? '∞' : `$${record.maxCostLimit}` }}
+            </span>
           </template>
           
           <template v-if="column.key === 'action'">
@@ -112,6 +122,18 @@
           />
         </a-form-item>
         
+        <a-form-item label="最大费用限制" name="maxCostLimit">
+          <a-input-number 
+            v-model:value="form.maxCostLimit" 
+            :min="-1"
+            placeholder="最大费用限制（-1表示不限制）"
+            style="width: 100%"
+          />
+          <div style="margin-top: 4px; color: #666; font-size: 12px;">
+            设置费用限制后，将优先检查费用限制而非Token数量限制
+          </div>
+        </a-form-item>
+        
         <a-form-item v-if="editingToken && editingToken.apiKey" label="API密钥">
           <span style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f5f5f5; border: 1px solid #d9d9d9; border-radius: 6px;">
             <span>{{ maskApiKey(editingToken.apiKey) }}</span>
@@ -155,7 +177,8 @@ const form = reactive({
   name: '',
   description: '',
   expireTime: null,
-  maxUsage: -1
+  maxUsage: -1,
+  maxCostLimit: -1
 });
 
 const rules = {
@@ -191,8 +214,16 @@ const columns = [
     key: 'maxUsage',
   },
   {
+    title: '费用限制',
+    key: 'costLimit',
+  },
+  {
     title: 'Token使用情况',
     key: 'usage',
+  },
+  {
+    title: '费用使用情况',
+    key: 'costUsage',
   },
   {
     title: '创建者',
@@ -252,6 +283,7 @@ const editToken = (token) => {
   form.description = token.description;
   form.expireTime = token.expireTime ? dayjs(token.expireTime) : null;
   form.maxUsage = token.maxUsage;
+  form.maxCostLimit = token.maxCostLimit === null ? -1 : token.maxCostLimit;
   modalVisible.value = true;
 };
 
@@ -260,6 +292,7 @@ const resetForm = () => {
   form.description = '';
   form.expireTime = null;
   form.maxUsage = -1;
+  form.maxCostLimit = -1;
 };
 
 const handleSubmit = async () => {
@@ -277,8 +310,10 @@ const handleSubmit = async () => {
         description: form.description,
         expireTime: expireTimeStr,
         maxUsage: form.maxUsage,
+        maxCostLimit: form.maxCostLimit === -1 ? null : form.maxCostLimit,
         apiKey: editingToken.value.apiKey,
         tokenUsage: editingToken.value.tokenUsage,
+        currentCostUsage: editingToken.value.currentCostUsage,
         status: editingToken.value.status,
         creator: editingToken.value.creator,
         lastUsedTime: editingToken.value.lastUsedTime
@@ -287,7 +322,7 @@ const handleSubmit = async () => {
       response = await updateToken(params);
     } else {
       // 创建令牌
-      response = await createToken(form.name, form.description, expireTimeStr, form.maxUsage, 'admin');
+      response = await createToken(form.name, form.description, expireTimeStr, form.maxUsage, form.maxCostLimit === -1 ? null : form.maxCostLimit, 'admin');
     }
     
     if (response.data.success) {

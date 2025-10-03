@@ -189,15 +189,15 @@ public class OneapiRequestService {
         }
     }
 
-    public boolean checkApiKey(RequestEntity request, HttpServletResponse response) {
+    public Integer extractTokenId(RequestEntity request, HttpServletResponse response) {
         String apiKey = request.getHeaders().getFirst("authorization");
         if (StringUtils.isBlank(apiKey)) {
             badRequest(response, "缺少授权信息");
-            return true;
+            return null;
         }
         if (!apiKey.startsWith(SECRET_HEAD)) {
             badRequest(response, "apiKey格式异常");
-            return true;
+            return null;
         }
         
         apiKey = apiKey.replace(SECRET_HEAD, StringUtils.EMPTY);
@@ -205,11 +205,13 @@ public class OneapiRequestService {
         // 首先尝试使用新的令牌缓存系统验证（性能优化）
         try {
             OneapiSingleResult<OneapiTokenDO> validateResult = tokenCacheService.validateApiKeyWithCache(apiKey);
-            return validateResult != null && validateResult.isSuccess();
+            if (validateResult != null && validateResult.isSuccess() && validateResult.getData() != null) {
+                return validateResult.getData().getId();
+            }
         } catch (Exception e) {
             log.warn("令牌缓存验证异常，尝试使用旧的验证方式: {}", e.getMessage());
         }
-        return false;
+        return null;
     }
 
     public void badRequest(HttpServletResponse response, String message) {

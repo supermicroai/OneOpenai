@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -39,13 +40,18 @@ public interface OneapiTokenMapper extends BaseMapper<OneapiTokenDO> {
     List<OneapiTokenDO> selectAll();
     
     /**
-     * 更新令牌使用次数
+     * 更新令牌使用次数和费用使用量
      * @param id 令牌ID
-     * @param increment 增量
+     * @param tokenIncrement token增量
+     * @param costIncrement 费用增量
      * @return 影响行数
      */
-    @Update("UPDATE oneapi_token SET current_usage = current_usage + #{increment}, last_used_time = CURRENT_TIMESTAMP, gmt_modified = CURRENT_TIMESTAMP WHERE id = #{id}")
-    int updateUsageCount(@Param("id") Integer id, @Param("increment") Long increment);
+    @Update("UPDATE oneapi_token SET token_usage = token_usage + #{tokenIncrement}, " +
+            "current_cost_usage = IFNULL(current_cost_usage, 0) + #{costIncrement}, " +
+            "last_used_time = CURRENT_TIMESTAMP, gmt_modified = CURRENT_TIMESTAMP WHERE id = #{id}")
+    int updateUsageAndCost(@Param("id") Integer id, @Param("tokenIncrement") Long tokenIncrement, @Param("costIncrement") BigDecimal costIncrement);
+    
+
     
     /**
      * 更新最后使用时间

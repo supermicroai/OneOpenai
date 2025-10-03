@@ -14,11 +14,11 @@ export function getAllTokens() {
     })
 }
 
-export function createToken(name, description, expireTime, maxUsage, creator) {
+export function createToken(name, description, expireTime, maxUsage, maxCostLimit, creator) {
     return request({
         url: '/service/com.supersoft.oneapi.token.service.OneapiTokenService/createToken',
         method: 'post',
-        data: [name, description, expireTime, maxUsage, creator]
+        data: [name, description, expireTime, maxUsage, maxCostLimit, creator]
     })
 }
 

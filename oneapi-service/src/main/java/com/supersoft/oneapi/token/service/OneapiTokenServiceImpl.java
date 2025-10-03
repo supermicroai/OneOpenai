@@ -39,7 +39,7 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
     @Override
     @Transactional
     public OneapiSingleResult<OneapiTokenDO> createToken(String name, String description, 
-                                                         Date expireTime, Long maxUsage, String creator) {
+                                                         Date expireTime, Long maxUsage, BigDecimal maxCostLimit, String creator) {
         if (StringUtils.isBlank(name)) {
             return OneapiSingleResult.fail("令牌名称不能为空");
         }
@@ -52,6 +52,8 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
             token.setExpireTime(expireTime);
             token.setMaxUsage(maxUsage == null ? -1L : maxUsage);
             token.setTokenUsage(0L);
+            token.setMaxCostLimit(maxCostLimit == null ? BigDecimal.valueOf(-1) : maxCostLimit);
+            token.setCurrentCostUsage(BigDecimal.ZERO);
             token.setStatus(1);
             token.setCreator(creator);
             
@@ -146,10 +148,21 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
             if (token.getExpireTime() != null && token.getExpireTime().before(new Date())) {
                 return OneapiSingleResult.fail("令牌已过期");
             }
-            
-            // 检查token使用量限制
-            if (token.getMaxUsage() != -1 && token.getTokenUsage() >= token.getMaxUsage()) {
-                return OneapiSingleResult.fail("令牌token使用量已达上限");
+
+            BigDecimal maxCostLimit = token.getMaxCostLimit();
+            BigDecimal costUsage = token.getCurrentCostUsage();
+            // 检查费用限制（优先级高于token限制）
+            if (maxCostLimit != null && maxCostLimit.compareTo(BigDecimal.valueOf(-1)) != 0) {
+                // 直接使用token表中的当前费用使用量字段
+                BigDecimal currentCostUsage = costUsage != null ? costUsage : BigDecimal.ZERO;
+                if (currentCostUsage.compareTo(maxCostLimit) >= 0) {
+                    return OneapiSingleResult.fail("令牌费用已达上限");
+                }
+            } else {
+                // 如果没有设置费用限制，检查token使用量限制
+                if (token.getMaxUsage() != -1 && token.getTokenUsage() >= token.getMaxUsage()) {
+                    return OneapiSingleResult.fail("令牌token使用量已达上限");
+                }
             }
             
             return OneapiSingleResult.success(token);
@@ -161,12 +174,13 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
     
     @Override
     @Transactional
-    public OneapiSingleResult<Boolean> recordUsage(String provider, String model, 
+    public OneapiSingleResult<Boolean> recordUsage(Integer tokenId, String provider, String model, 
                                                    Integer requestTokens, Integer responseTokens, 
                                                    Integer status, String errorMsg, 
                                                    String ipAddress) {
         try {
             OneapiTokenUsageDO usage = new OneapiTokenUsageDO();
+            usage.setTokenId(tokenId);
             usage.setProvider(provider);
             usage.setModel(model);
             usage.setRequestTokens(requestTokens == null ? 0 : requestTokens);
@@ -186,7 +200,16 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
             usage.setGmtCreate(now);
             usage.setGmtModified(now);
             
+            // 插入使用记录
             int result = usageMapper.insert(usage);
+            
+            // 同时更新令牌的token使用量和费用使用量
+            if (result > 0 && tokenId != null) {
+                Long totalTokens = (long) ((requestTokens == null ? 0 : requestTokens) + (responseTokens == null ? 0 : responseTokens));
+                tokenMapper.updateUsageAndCost(tokenId, totalTokens, cost);
+                log.debug("更新令牌使用量: tokenId={}, totalTokens={}, cost={}", tokenId, totalTokens, cost);
+            }
+            
             return OneapiSingleResult.success(result > 0);
         } catch (Exception e) {
             log.error("记录使用异常", e);
@@ -209,6 +232,8 @@ public class OneapiTokenServiceImpl implements OneapiTokenService {
     public String generateApiKey() {
         return "sk-oneapi-" + UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
     }
+    
+
 
     @Override
     public OneapiMultiResult<OneapiTokenUsageDO> queryUsageRecords(String provider, String model, Integer status, String startTime, String endTime, Integer page, Integer pageSize) {
