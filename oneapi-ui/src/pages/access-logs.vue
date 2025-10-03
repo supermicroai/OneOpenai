@@ -64,6 +64,17 @@
               </template>
               查询
             </a-button>
+            <a-button 
+              type="default" 
+              :loading="calculating" 
+              @click="handleRecalculateCosts"
+              style="background-color: #52c41a; border-color: #52c41a; color: white;"
+            >
+              <template #icon>
+                <CalculatorOutlined />
+              </template>
+              计算开销
+            </a-button>
           </div>
         </a-col>
       </a-row>
@@ -111,12 +122,13 @@
 <script setup>
 import { ref, onMounted, reactive, computed } from 'vue';
 import { message } from 'ant-design-vue';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons-vue';
+import { SearchOutlined, ReloadOutlined, CalculatorOutlined } from '@ant-design/icons-vue';
 import dayjs from 'dayjs';
-import { queryUsageRecords } from '@/api/token.js';
+import { queryUsageRecords, recalculateAllTokenCosts } from '@/api/token.js';
 
 const accessLogs = ref([]);
 const loading = ref(false);
+const calculating = ref(false);
 
 const searchForm = reactive({
   provider: undefined,
@@ -309,6 +321,25 @@ const truncateErrorMsg = (errorMsg) => {
     return '-';
   }
   return errorMsg.length > 30 ? errorMsg.substring(0, 30) + '...' : errorMsg;
+};
+
+const handleRecalculateCosts = async () => {
+  calculating.value = true;
+  try {
+    const response = await recalculateAllTokenCosts();
+    if (response.data.success) {
+      message.success(response.data.data || '计算完成！');
+      // 重新加载数据
+      loadAccessLogs();
+    } else {
+      message.error(response.data.message || '计算开销失败');
+    }
+  } catch (error) {
+    message.error('计算开销失败');
+    console.error('计算开销异常:', error);
+  } finally {
+    calculating.value = false;
+  }
 };
 
 onMounted(() => {

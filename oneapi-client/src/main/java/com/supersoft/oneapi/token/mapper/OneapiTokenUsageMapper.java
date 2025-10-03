@@ -46,4 +46,17 @@ public interface OneapiTokenUsageMapper extends BaseMapper<OneapiTokenUsageDO> {
      */
     @Select("SELECT * FROM oneapi_token_usage WHERE status = #{status} ORDER BY gmt_create DESC")
     List<OneapiTokenUsageDO> selectByStatus(@Param("status") Integer status);
+    
+    /**
+     * 按tokenId和模型分组统计使用记录
+     * @param tokenId 令牌ID
+     * @return 分组统计结果列表
+     */
+    @Select("SELECT token_id, provider, model, " +
+            "SUM(request_tokens) as request_tokens, " +
+            "SUM(response_tokens) as response_tokens " +
+            "FROM oneapi_token_usage " +
+            "WHERE token_id = #{tokenId} " +
+            "GROUP BY token_id, provider, model")
+    List<OneapiTokenUsageDO> selectGroupedUsageByTokenId(@Param("tokenId") Integer tokenId);
 }

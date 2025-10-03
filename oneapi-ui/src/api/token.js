@@ -53,3 +53,11 @@ export function queryUsageRecords(provider, model, status, startTime, endTime, p
         data: [provider, model, status, startTime, endTime, page, pageSize]
     })
 }
+
+export function recalculateAllTokenCosts() {
+    return request({
+        url: '/service/com.supersoft.oneapi.token.service.OneapiTokenService/recalculateAllTokenCosts',
+        method: 'post',
+        data: []
+    })
+}

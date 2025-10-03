@@ -108,4 +108,10 @@ public interface OneapiTokenService {
      * @return API密钥
      */
     String generateApiKey();
+    
+    /**
+     * 根据最新的模型价格重新计算所有令牌的费用使用量
+     * @return 计算结果
+     */
+    OneapiSingleResult recalculateAllTokenCosts();
 }
