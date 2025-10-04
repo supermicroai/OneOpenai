@@ -14,8 +14,10 @@ import com.supersoft.oneapi.provider.mapper.OneapiProviderMapper;
 import com.supersoft.oneapi.proxy.service.OneapiConfigFacade;
 import com.supersoft.oneapi.token.data.OneapiTokenUsageDO;
 import com.supersoft.oneapi.token.service.OneapiTokenService;
+import io.micrometer.common.util.StringUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -161,13 +163,36 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
 
     @Override
     public OneapiSingleResult<OneapiProviderDO> updateProvider(OneapiProviderDO provider) {
-        Long id = provider.getId();
-        if (id == null) {
-            return OneapiSingleResult.fail("Provider id is null");
+        try {
+            Long id = provider.getId();
+            Date now = new Date();
+            
+            if (id == null) {
+                // 新增提供商
+                if (StringUtils.isNotEmpty(provider.getCode())) {
+                    return OneapiSingleResult.fail("提供商代码不能为空");
+                }
+                provider.setGmtCreate(now);
+                provider.setGmtModified(now);
+                if (provider.getEnable() == null) {
+                    provider.setEnable(true); // 默认启用
+                }
+                providerMapper.insert(provider);
+            } else {
+                // 更新提供商
+                provider.setGmtModified(now);
+                providerMapper.updateById(provider);
+            }
+            
+            return OneapiSingleResult.success(provider);
+        } catch (Exception e) {
+            log.error("保存提供商信息异常", e);
+            // 判断是否为唯一性约束异常
+            if (e instanceof DuplicateKeyException) {
+                return OneapiSingleResult.fail("提供商代码已存在，请使用其他代码");
+            }
+            return OneapiSingleResult.fail("保存提供商信息失败：" + e.getMessage());
         }
-        provider.setGmtModified(new Date());
-        providerMapper.updateById(provider);
-        return OneapiSingleResult.success(provider);
     }
 
     @Override

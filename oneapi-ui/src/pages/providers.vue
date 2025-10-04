@@ -56,7 +56,7 @@
 
     <!-- Add Provider Button -->
     <div class="action-bar" style="margin-bottom: 16px;">
-      <a-button type="primary" @click="changeRoute('/provider/new')">
+      <a-button type="primary" @click="showCreateModal">
         <template #icon>
           <PlusOutlined />
         </template>
@@ -109,7 +109,7 @@
     <!-- Edit Provider Modal -->
     <a-modal
       v-model:open="editModalVisible"
-      title="编辑提供商"
+      :title="editingToken ? '编辑提供商' : '新增提供商'"
       @ok="handleEditSubmit"
       @cancel="handleEditCancel"
       :confirm-loading="editLoading"
@@ -125,6 +125,13 @@
         :colon="false" 
         :labelCol="{ style: { width: '100px' } }"
       >
+        <a-form-item label="代码" name="code">
+          <a-input 
+            v-model:value="currentProvider.code" 
+            :disabled="editingToken !== null"
+            :placeholder="editingToken ? '系统自动生成' : '请输入提供商代码'"
+          />
+        </a-form-item>
         <a-form-item label="名称" name="name">
           <a-input v-model:value="currentProvider.name" />
         </a-form-item>
@@ -340,10 +347,6 @@ const searchKeyword = ref('');
 const typeFilter = ref('');
 const statusFilter = ref('');
 
-const changeRoute = (route) => {
-  router.push(route);
-};
-
 const typeMapping = {
   llm: '文本生成',
   ocr: 'OCR',
@@ -355,6 +358,11 @@ const columns = [
     title: 'ID',
     dataIndex: 'id',
     width: 80,
+  },
+  {
+    title: '代码',
+    dataIndex: 'code',
+    width: 100,
   },
   {
     title: '名称',
@@ -374,7 +382,7 @@ const columns = [
   {
     title: '支持模型列表',
     dataIndex: 'models',
-    width: 450,
+    width: 400,
   },
   {
     title: '是否启用',
@@ -525,8 +533,10 @@ const loadProviders = async () => {
 const editModalVisible = ref(false);
 const editLoading = ref(false);
 const editFormRef = ref();
+const editingToken = ref(null); // null表示新增，有值表示编辑
 const currentProvider = ref({
   id: null,
+  code: '',
   name: '',
   url: '',
   api: '',
@@ -553,17 +563,39 @@ const currentProviderCode = ref(null); // 当前提供商代码
 const editingAccountIds = ref(new Set()); // 正在编辑的账号ID集合
 
 // Edit form rules
-const editRules = {
-  name: [
-    { required: true, message: '请输入提供商名称', trigger: 'blur' }
-  ],
-  api: [
-    { required: true, message: '请输入API地址', trigger: 'blur' }
-  ],
-  type: [
-    { required: true, message: '请选择模型类型', trigger: 'change' }
-  ]
-};
+const editRules = computed(() => {
+  const rules = {
+    name: [
+      { required: true, message: '请输入提供商名称', trigger: 'blur' }
+    ],
+    api: [
+      { required: true, message: '请输入API地址', trigger: 'blur' }
+    ],
+    type: [
+      { required: true, message: '请选择模型类型', trigger: 'change' }
+    ]
+  };
+  
+  // 新增时code字段为必填
+  if (editingToken.value === null) {
+    rules.code = [
+      { required: true, message: '请输入提供商代码', trigger: 'blur' },
+      { 
+        pattern: /^[a-zA-Z0-9_-]+$/, 
+        message: '代码只能包含字母、数字、下划线和短横线', 
+        trigger: 'blur' 
+      },
+      {
+        min: 3,
+        max: 32,
+        message: '代码长度必须在3-32个字符之间',
+        trigger: 'blur'
+      }
+    ];
+  }
+  
+  return rules;
+});
 
 // Model columns for edit modal
 const modelColumns = [
@@ -675,6 +707,7 @@ const showEditModal = async (record) => {
     const response = await getProvider(record.id);
     const providerData = response.data.data;
     
+    editingToken.value = record; // 设置为编辑模式
     currentProvider.value = {
       ...providerData,
       models: providerData.models ? JSON.parse(providerData.models) : {}
@@ -690,6 +723,31 @@ const showEditModal = async (record) => {
     message.error('获取提供商信息失败: ' + error.message);
   } finally {
     editLoading.value = false;
+  }
+};
+
+// Show create modal
+const showCreateModal = async () => {
+  try {
+    editingToken.value = null; // 设置为新增模式
+    currentProvider.value = {
+      id: null,
+      code: '',
+      name: '',
+      url: '',
+      api: '',
+      type: '',
+      models: {}
+    };
+    
+    // Load models
+    const modelsResponse = await getModels();
+    modelList.value = modelsResponse.data.data || [];
+    
+    filteredEditModelList.value = [];
+    editModalVisible.value = true;
+  } catch (error) {
+    message.error('加载数据失败: ' + error.message);
   }
 };
 
@@ -758,8 +816,10 @@ const handleEditSubmit = async () => {
 // Handle edit cancel
 const handleEditCancel = () => {
   editModalVisible.value = false;
+  editingToken.value = null;
   currentProvider.value = {
     id: null,
+    code: '',
     name: '',
     url: '',
     api: '',

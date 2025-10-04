@@ -73,6 +73,9 @@ INSERT INTO oneapi_model (name, vendor, type, input_price, output_price, enable)
     ('claude-3-haiku', 'Claude', 'llm', 0.25, 1.25, 1),
     ('claude-3.5-haiku', 'Claude', 'llm', 1.0, 5.0, 1),
     ('claude-3.5-sonnet', 'Claude', 'llm', 3.0, 15.0, 1),
+    ('claude-3.7-sonnet', 'Claude', 'llm', 3.0, 15.0, 1),
+    ('claude-4.0-sonnet', 'Claude', 'llm', 5.0, 25.0, 1),
+    ('claude-4.5-sonnet', 'Claude', 'llm', 5.0, 25.0, 1),
     ('deepseek-chat', 'DeepSeek', 'llm', 0.14, 0.28, 1),
     ('deepseek-chat-v2', 'DeepSeek', 'llm', 0.14, 0.28, 1),
     ('gpt-3.5-turbo', 'OpenAI', 'llm', 1.5, 2.0, 1),
@@ -118,7 +121,7 @@ create table oneapi_provider
 
 -- 插入服务提供商数据
 INSERT INTO oneapi_provider (code, name, type, url, api, models, service, enable) VALUES
-    ('openrouter_llm', 'openrouter', 'llm', 'https://openrouter.ai', 'https://openrouter.ai/api/v1', '{"o1":"openai/o1-preview-2024-09-12","claude-3-haiku":"anthropic/claude-3-haiku","claude-3.5-sonnet":"anthropic/claude-3.5-sonnet","llama-3.1-8b":"meta-llama/llama-3.1-8b-instruct","gpt-4o-mini":"openai/gpt-4o-mini","o1-preview":"openai/o1-preview-2024-09-12","llama-3.1-405b":"meta-llama/llama-3.1-405b-instruct","gpt-3.5-turbo":"openai/gpt-3.5-turbo","llama-3.1-70b":"meta-llama/llama-3.1-70b-instruct","claude-3.5-haiku":"anthropic/claude-3-5-haiku","llama-3-70b":"meta-llama/llama-3-70b","o1-mini":"openai/o1-mini","gpt-4o":"openai/gpt-4o"}', 'openRouterService', 1),
+    ('openrouter_llm', 'openrouter', 'llm', 'https://openrouter.ai', 'https://openrouter.ai/api/v1', '{"o1":"openai/o1-preview-2024-09-12","claude-3-haiku":"anthropic/claude-3-haiku","claude-3.5-sonnet":"anthropic/claude-3.5-sonnet","claude-3.7-sonnet":"anthropic/claude-3.7-sonnet","claude-4.0-sonnet":"anthropic/claude-4.0-sonnet","claude-4.5-sonnet":"anthropic/claude-4.5-sonnet","llama-3.1-8b":"meta-llama/llama-3.1-8b-instruct","gpt-4o-mini":"openai/gpt-4o-mini","o1-preview":"openai/o1-preview-2024-09-12","llama-3.1-405b":"meta-llama/llama-3.1-405b-instruct","gpt-3.5-turbo":"openai/gpt-3.5-turbo","llama-3.1-70b":"meta-llama/llama-3.1-70b-instruct","claude-3.5-haiku":"anthropic/claude-3-5-haiku","llama-3-70b":"meta-llama/llama-3-70b","o1-mini":"openai/o1-mini","gpt-4o":"openai/gpt-4o"}', 'openRouterService', 1),
     ('aliyun_llm', 'aliyun', 'llm', 'https://bailian.console.aliyun.com', 'https://dashscope.aliyuncs.com/compatible-mode/v1', '{"qwen2.5-72b": "qwen2.5-72b-instruct","qwen2.5-math-72b": "qwen2.5-math-72b-instruct","qwen2-72b": "qwen2-72b-instruct","qwen2-57b": "qwen2-57b-a14b-instruct","qwen1.5-110b": "qwen1.5-110b-chat","qwen1.5-72b": "qwen1.5-72b-chat","qwen-vl-plus": "qwen-vl-plus","qwen-vl-max": "qwen-vl-max","qwen-math-plus": "qwen-math-plus"}', 'aliyunService', 1),
     ('siliconflow_llm', 'siliconflow', 'llm', 'https://cloud.siliconflow.cn', 'https://api.siliconflow.cn/v1', '{"deepseek-chat-v2": "deepseek-ai/DeepSeek-V2-Chat"}', 'siliconService', 1),
     ('aliyun_embedding', 'aliyun', 'embedding', 'https://bailian.console.aliyun.com', 'https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding', '{"text-embedding-v3": "text-embedding-v3"}', 'aliyunService', 1),

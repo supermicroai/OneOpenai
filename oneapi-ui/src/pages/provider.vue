@@ -1,16 +1,30 @@
 <template>
   <div class="provider-form">
-    <a-form labelAlign="left" :colon="false" :labelCol="{ style: { width: '150px' } }">
-      <a-form-item label="名称">
+    <a-form 
+      ref="formRef"
+      :model="provider"
+      :rules="formRules"
+      labelAlign="left" 
+      :colon="false" 
+      :labelCol="{ style: { width: '150px' } }"
+    >
+      <a-form-item label="代码" name="code">
+        <a-input 
+          v-model:value="provider.code" 
+          :disabled="providerId !== 'new'"
+          :placeholder="providerId === 'new' ? '请输入提供商代码' : '系统自动生成'"
+        />
+      </a-form-item>
+      <a-form-item label="名称" name="name">
         <a-input v-model:value="provider.name" />
       </a-form-item>
-      <a-form-item label="网址">
+      <a-form-item label="网址" name="url">
         <a-input v-model:value="provider.url" />
       </a-form-item>
-      <a-form-item label="API地址">
+      <a-form-item label="API地址" name="api">
         <a-input v-model:value="provider.api" />
       </a-form-item>
-      <a-form-item label="模型类型">
+      <a-form-item label="模型类型" name="type">
         <a-select v-model:value="provider.type" @change="filterModels">
           <a-select-option value="embedding">向量</a-select-option>
           <a-select-option value="llm">文本生成</a-select-option>
@@ -86,9 +100,46 @@ import { getModels, getProvider, updateProvider } from '@/api/provider';
 
 const route = useRoute();
 const providerId = route.params.providerId;
+const formRef = ref();
+
+// 表单验证规则
+const formRules = computed(() => {
+  const rules = {
+    name: [
+      { required: true, message: '请输入提供商名称', trigger: 'blur' }
+    ],
+    api: [
+      { required: true, message: '请输入API地址', trigger: 'blur' }
+    ],
+    type: [
+      { required: true, message: '请选择模型类型', trigger: 'change' }
+    ]
+  };
+  
+  // 新增时code字段为必填
+  if (providerId === 'new') {
+    rules.code = [
+      { required: true, message: '请输入提供商代码', trigger: 'blur' },
+      { 
+        pattern: /^[a-zA-Z0-9_-]+$/, 
+        message: '代码只能包含字母、数字、下划线和短横线', 
+        trigger: 'blur' 
+      },
+      {
+        min: 3,
+        max: 32,
+        message: '代码长度必须在3-32个字符之间',
+        trigger: 'blur'
+      }
+    ];
+  }
+  
+  return rules;
+});
 
 const provider = ref({
   id: -1,
+  code: '',
   type: '',
   name: '',
   url: '',
@@ -250,19 +301,26 @@ const filterOption = (input, option) => {
   return option.label.toLowerCase().includes(input.toLowerCase());
 };
 
-const handleSubmit = (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   try {
+    // 验证表单
+    await formRef.value.validate();
+    
     const list = filteredModelList.value
         .filter(item => item.value.trim() !== '')
         .map(item => [item.name, item.value]);
     provider.value.models = Object.fromEntries(list);
-    updateProvider(provider.value).then(() => {
-      message.success('更新成功');
-      loadProvider();
-    });
+    
+    await updateProvider(provider.value);
+    message.success('更新成功');
+    loadProvider();
   } catch (error) {
-    message.error('更新失败:' + error);
+    if (error.errorFields) {
+      // 表单验证错误，不显示错误消息
+      return;
+    }
+    message.error('更新失败:' + error.message);
   }
 };
 </script>
