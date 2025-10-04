@@ -81,7 +81,7 @@ Fully compatible with the OpenAI LLM proxy interface. Please refer to the [OpenA
 ### Docker Deployment
 1. Pull the Docker image:
     ```bash
-    docker pull supermicroai/oneapi:20241223
+    docker pull supermicroai/oneapi
     ```
 2. Run the Docker container:
     ```bash
