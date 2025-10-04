@@ -85,7 +85,7 @@ Fully compatible with the OpenAI LLM proxy interface. Please refer to the [OpenA
     ```
 2. Run the Docker container:
     ```bash
-    docker run -d -p 7001:7001 supermicroai/oneapi:20241223
+    docker run -d -p 7001:7001 supermicroai/oneapi
     ```
 
 ### Kubernetes Deployment
