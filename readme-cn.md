@@ -26,7 +26,7 @@ OneAPI是一个openai代理应用，旨在提供统一的openai协议下的llm�
 ## 接口使用方式
 完全兼容openai的llm代理接口, 请参考openai的llm[接口文档](https://platform.openai.com/docs/introduction).
 - 本应用的接口地址为`http://localhost:7001/v1`
-- 需要在oneapi_config表中配置apikey用于接口鉴权, 默认的apikey为`sk-oneapi-oneapi`. 目前该配置无配置界面, 请自行在数据库中修改, 支持配置多个apikey
+- 需要在oneapi_config表中配置apikey用于接口鉴权, 默认的apikey为`sk-oneapi-default-token-2024`. 
 - 测试代码可参见 [TestModelApi.java](oneapi-start/src/test/java/com/supersoft/oneapi/api/TestModelApi.java)
 
 ## 基础配置

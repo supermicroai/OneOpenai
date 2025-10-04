@@ -25,7 +25,7 @@ OneAPI is an OpenAI proxy application designed to provide LLM proxy services und
 ## API Usage
 Fully compatible with the OpenAI LLM proxy interface. Please refer to the [OpenAI LLM API documentation](https://platform.openai.com/docs/introduction).
 - The API address for this application is `http://localhost:7001/v1`.
-- You need to configure the API key in the `oneapi_config` table for API authentication. The default API key is `sk-oneapi-oneapi`. Currently, there is no configuration interface for this; please modify it directly in the database, supporting multiple API keys.
+- You need to configure the API key in the `oneapi_config` table for API authentication. The default API key is `sk-oneapi-default-token-2024`. 
 - Test code can be found in [TestModelApi.java](oneapi-start/src/test/java/com/supersoft/oneapi/api/TestModelApi.java).
 
 ## Basic Configuration
