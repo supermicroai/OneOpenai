@@ -129,8 +129,12 @@ INSERT INTO oneapi_provider (code, name, type, url, api, models, service, enable
     ('siliconflow_llm', 'siliconflow', 'llm', 'https://cloud.siliconflow.cn', 'https://api.siliconflow.cn/v1', '{"deepseek-chat-v2": "deepseek-ai/DeepSeek-V2-Chat"}', 'siliconService', 1),
     ('aliyun_embedding', 'aliyun', 'embedding', 'https://bailian.console.aliyun.com', 'https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding', '{"text-embedding-v3": "text-embedding-v3"}', 'aliyunService', 1),
     ('siliconflow_embedding', 'siliconflow', 'embedding', 'https://cloud.siliconflow.cn', 'https://api.siliconflow.cn/v1/embeddings', '{"bge-large-zh-v1.5": "BAAI/bge-large-zh-v1.5","bge-m3": "BAAI/bge-m3"}', 'siliconService', 1),
-    ('aliyun_ocr', 'aliyun', 'ocr', 'https://bailian.console.aliyun.com', '', '{"ocr-ali-v1": "ocr-ali-v1"}', 'aliyunService', 1);
-
+    ('aliyun_ocr', 'aliyun', 'ocr', 'https://bailian.console.aliyun.com', '', '{"ocr-ali-v1": "ocr-ali-v1"}', 'aliyunService', 1),
+    ('openai_official', 'openai', 'llm', 'https://openai.com', 'https://api.openai.com/v1', '{"gpt-3.5-turbo": "gpt-3.5-turbo", "gpt-4": "gpt-4", "gpt-4-turbo": "gpt-4-turbo", "gpt-4o": "gpt-4o", "gpt-4o-mini": "gpt-4o-mini", "o1": "o1", "o1-mini": "o1-mini", "o1-preview": "o1-preview"}', 'openaiService', 1),
+    ('openai_embedding', 'openai', 'embedding', 'https://openai.com', 'https://api.openai.com/v1', '{"text-embedding-3-large": "text-embedding-3-large", "text-embedding-3-small": "text-embedding-3-small", "text-embedding-ada-002": "text-embedding-ada-002"}', 'openaiService', 1),
+    ('claude_official', 'claude', 'llm', 'https://anthropic.com', 'https://api.anthropic.com/v1', '{"claude-3-haiku": "claude-3-haiku-20240307", "claude-3-sonnet": "claude-3-sonnet-20240229", "claude-3-opus": "claude-3-opus-20240229", "claude-3.5-haiku": "claude-3-5-haiku-20241022", "claude-3.5-sonnet": "claude-3-5-sonnet-20241022", "claude-3.7-sonnet": "claude-3-7-sonnet-20241101", "claude-4.0-sonnet": "claude-4-0-sonnet-20241201", "claude-4.5-sonnet": "claude-4-5-sonnet-20241201"}', 'claudeService', 1),
+    ('azure_openai', 'azure', 'llm', 'https://azure.microsoft.com/zh-cn/products/ai-services/openai-service', 'https://{deployment}.openai.azure.com', '{"azure-gpt-4o": "gpt-4o", "azure-gpt-4o-mini": "gpt-4o-mini", "azure-gpt-35-turbo": "gpt-35-turbo"}', 'azureService', 1),
+    ('bedrock_llm', 'bedrock', 'llm', 'https://aws.amazon.com/bedrock', 'https://bedrock-runtime.{region}.amazonaws.com', '{"bedrock-claude-3-haiku": "anthropic.claude-3-haiku-20240307-v1:0", "bedrock-claude-3-sonnet": "anthropic.claude-3-sonnet-20240229-v1:0", "bedrock-claude-3.5-sonnet": "anthropic.claude-3-5-sonnet-20241022-v2:0", "bedrock-titan-text-v1": "amazon.titan-text-lite-v1"}', 'bedrockService', 1);
 -- 令牌管理表
 create table oneapi_token
 (

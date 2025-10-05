@@ -237,7 +237,7 @@ const columns = [
   {
     title: '模型名称',
     dataIndex: 'name',
-    width: 180,
+    width: 250,
   },
   {
     title: '厂商',
