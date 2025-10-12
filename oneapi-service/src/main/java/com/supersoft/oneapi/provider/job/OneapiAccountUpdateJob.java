@@ -9,11 +9,12 @@ import com.supersoft.oneapi.provider.service.OneapiAccountService;
 import com.supersoft.oneapi.util.OneapiConfigUtils;
 import com.supersoft.oneapi.service.alert.OneapiAlertManager;
 import com.supersoft.oneapi.util.OneapiServiceLocator;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import com.supersoft.oneapi.util.BooleanUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -35,10 +36,11 @@ public class OneapiAccountUpdateJob {
     @Resource
     OneapiProviderMapper oneapiProviderMapper;
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void init() {
+        log.info("应用启动完成，开始调度账户余额更新任务");
         Executors.newSingleThreadScheduledExecutor()
-                .scheduleWithFixedDelay(this::updateAllAccountBalances, 0, 10, TimeUnit.MINUTES);
+                .scheduleWithFixedDelay(this::updateAllAccountBalances, 1, 10, TimeUnit.MINUTES);
     }
 
     /**
