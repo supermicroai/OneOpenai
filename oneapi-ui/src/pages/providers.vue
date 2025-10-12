@@ -859,7 +859,7 @@ const handleEditCancel = () => {
 
 // Show add model modal
 const showAddModelModal = () => {
-  addModalVisible.value = true;
+  addModelModalVisible.value = true;
   selectedModel.value = '';
   modelAlias.value = '';
 };

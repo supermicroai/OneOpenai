@@ -91,6 +91,15 @@ public class TestModelApi {
         log.info("response:{}", response);
     }
 
+    public void embeddingBgeTest() throws Exception {
+        EmbeddingRequest request = EmbeddingRequest.builder()
+                .model("bge-large-zh-v1.5").input("你好, 你叫什么名字").build();
+        long start = System.currentTimeMillis();
+        EmbeddingResponse response = client.embedding(request).execute();
+        log.info("cost:{}", System.currentTimeMillis() - start);
+        log.info("response:{}", response);
+    }
+
     /**
      * 验证ocr
      */
