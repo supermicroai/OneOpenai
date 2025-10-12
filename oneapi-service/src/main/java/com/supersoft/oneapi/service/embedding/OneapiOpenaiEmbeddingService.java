@@ -28,10 +28,7 @@ public class OneapiOpenaiEmbeddingService implements OneapiEmbeddingService {
      */
     @Override
     public boolean apply(OneapiProvider providerItem) {
-        if (providerItem == null) {
-            return false;
-        }
-        return !MODEL_NAME.equals(providerItem.getModel());
+        return providerItem != null;
     }
 
     @Override

@@ -18,7 +18,6 @@ import java.util.List;
 /**
  * 阿里云的embedding服务
  */
-@Service
 public class OneapiAliyunEmbeddingService implements OneapiEmbeddingService {
     String MODEL_NAME = "text-embedding-v3";
 
