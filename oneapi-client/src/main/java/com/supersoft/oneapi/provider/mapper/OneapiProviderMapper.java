@@ -17,9 +17,9 @@ public interface OneapiProviderMapper extends BaseMapper<OneapiProviderDO> {
     
     /**
      * 根据名称查询供应商
-     * @param name 供应商名称
+     * @param code 供应商code
      * @return 供应商信息
      */
-    @Select("SELECT * FROM oneapi_provider WHERE name = #{name} LIMIT 1")
-    OneapiProviderDO selectByName(@Param("name") String name);
+    @Select("SELECT * FROM oneapi_provider WHERE code = #{code} LIMIT 1")
+    OneapiProviderDO selectByCode(@Param("code") String code);
 }

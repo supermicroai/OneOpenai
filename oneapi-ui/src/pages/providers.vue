@@ -3,27 +3,14 @@
     <!-- Search and Filter -->
     <div class="filter-section">
       <a-row :gutter="16" style="margin-bottom: 16px;">
-        <a-col :span="8">
+        <a-col :span="12">
           <a-input
             v-model:value="searchKeyword"
             placeholder="搜索提供商名称"
             allow-clear
           />
         </a-col>
-        <a-col :span="6">
-          <a-select
-            v-model:value="typeFilter"
-            placeholder="选择类型"
-            allow-clear
-            style="width: 100%"
-          >
-            <a-select-option value="">全部类型</a-select-option>
-            <a-select-option value="llm">文本生成</a-select-option>
-            <a-select-option value="embedding">向量</a-select-option>
-            <a-select-option value="ocr">OCR</a-select-option>
-          </a-select>
-        </a-col>
-        <a-col :span="6">
+        <a-col :span="8">
           <a-select
             v-model:value="statusFilter"
             placeholder="选择状态"
@@ -35,7 +22,7 @@
             <a-select-option value="0">禁用</a-select-option>
           </a-select>
         </a-col>
-        <a-col :span="4" :push="0">
+        <a-col :span="4">
           <div style="display: flex; gap: 8px; justify-content: flex-end;">
             <a-button @click="handleReset">
               <template #icon>
@@ -98,11 +85,6 @@
             @change="(checked) => enableChange(record, checked)" 
           />
         </template>
-        <template v-else-if="column.dataIndex === 'type'">
-          <a-tag :color="getTypeColor(record.type)">
-            {{ typeMapping[record.type] }}
-          </a-tag>
-        </template>
         <template v-else-if="column.dataIndex === 'action'">
           <a-space>
             <a-button type="link" size="small" @click="showAccountModal(record)">
@@ -150,13 +132,6 @@
         </a-form-item>
         <a-form-item label="API地址" name="api">
           <a-input v-model:value="currentProvider.api" />
-        </a-form-item>
-        <a-form-item label="模型类型" name="type">
-          <a-select v-model:value="currentProvider.type" @change="filterEditModels">
-            <a-select-option value="embedding">向量</a-select-option>
-            <a-select-option value="llm">文本生成</a-select-option>
-            <a-select-option value="ocr">OCR</a-select-option>
-          </a-select>
         </a-form-item>
         <a-form-item label="模型列表">
           <div class="model-list-container">
@@ -367,7 +342,6 @@ const filteredProviderList = ref([]);
 
 // Search and filter states
 const searchKeyword = ref('');
-const typeFilter = ref('');
 const statusFilter = ref('');
 
 const typeMapping = {
@@ -396,11 +370,6 @@ const columns = [
     title: '地址',
     dataIndex: 'url',
     width: 200,
-  },
-  {
-    title: '类型',
-    dataIndex: 'type',
-    width: 100,
   },
   {
     title: '支持模型列表',
@@ -451,15 +420,6 @@ const getModelTypeColor = (modelName) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-const getTypeColor = (type) => {
-  const colors = {
-    llm: 'blue',
-    embedding: 'green',
-    ocr: 'orange'
-  };
-  return colors[type] || 'default';
-};
-
 // Filter and search logic
 const applyFilters = () => {
   let filtered = [...providerList.value];
@@ -469,11 +429,6 @@ const applyFilters = () => {
     filtered = filtered.filter(provider => 
       provider.name.toLowerCase().includes(searchKeyword.value.toLowerCase())
     );
-  }
-  
-  // Apply type filter
-  if (typeFilter.value) {
-    filtered = filtered.filter(provider => provider.type === typeFilter.value);
   }
   
   // Apply status filter
@@ -496,7 +451,6 @@ const handleSearch = () => {
 
 const handleReset = () => {
   searchKeyword.value = '';
-  typeFilter.value = '';
   statusFilter.value = '';
   applyFilters();
 };
@@ -586,7 +540,6 @@ const currentProvider = ref({
   name: '',
   url: '',
   api: '',
-  type: '',
   models: {}
 });
 const modelList = ref([]);
@@ -616,9 +569,6 @@ const editRules = computed(() => {
     ],
     api: [
       { required: true, message: '请输入API地址', trigger: 'blur' }
-    ],
-    type: [
-      { required: true, message: '请选择模型类型', trigger: 'change' }
     ]
   };
   
@@ -762,27 +712,21 @@ const paginatedEditModels = computed(() => {
   return filteredEditModelList.value.slice(start, end);
 });
 
-// Available models for adding
+// Available models for adding - now shows all enabled models without type filtering
 const availableModelsForAdd = computed(() => {
   const currentModelNames = Object.keys(currentProvider.value.models || {});
-  console.log('Debug - Current provider type:', currentProvider.value.type);
-  console.log('Debug - Current model names:', currentModelNames);
-  console.log('Debug - All models:', modelList.value);
   
   const filtered = modelList.value
     .filter(model => {
-      const matchesType = model.type === currentProvider.value.type;
       const notAlreadyAdded = !currentModelNames.includes(model.name);
-      const isEnabled = model.enable === true || model.enabled === true; // 支持两种字段名
-      console.log(`Debug - Model ${model.name}: type=${model.type}, matchesType=${matchesType}, notAlreadyAdded=${notAlreadyAdded}, isEnabled=${isEnabled}`);
-      return matchesType && notAlreadyAdded && isEnabled;
+      const isEnabled = model.enable === true || model.enabled === true;
+      return notAlreadyAdded && isEnabled;
     })
     .map(model => ({
       label: model.name,
       value: model.name
     }));
     
-  console.log('Debug - Available models for add:', filtered);
   return filtered;
 });
 
@@ -822,7 +766,6 @@ const showCreateModal = async () => {
       name: '',
       url: '',
       api: '',
-      type: '',
       models: {}
     };
     
@@ -909,7 +852,6 @@ const handleEditCancel = () => {
     name: '',
     url: '',
     api: '',
-    type: '',
     models: {}
   };
   filteredEditModelList.value = [];
@@ -917,11 +859,7 @@ const handleEditCancel = () => {
 
 // Show add model modal
 const showAddModelModal = () => {
-  if (!currentProvider.value.type) {
-    message.warning('请先选择模型类型');
-    return;
-  }
-  addModelModalVisible.value = true;
+  addModalVisible.value = true;
   selectedModel.value = '';
   modelAlias.value = '';
 };

@@ -18,10 +18,6 @@ public class OneapiProvider extends OneapiBaseObject {
      * 提供者来源
      */
     String name;
-    /**
-     * 提供者类型
-     */
-    String type;
     String note;
     /**
      * 令牌ID（用于记录使用情况）

@@ -48,7 +48,7 @@ public class OneapiPricingServiceImpl implements OneapiPricingService {
             BigDecimal outputPrice = null;
             
             // 获取提供商信息
-            OneapiProviderDO providerDO = providerMapper.selectByName(provider);
+            OneapiProviderDO providerDO = providerMapper.selectByCode(provider);
             if (providerDO != null && StringUtils.isNotBlank(providerDO.getModels())) {
                 try {
                     // 使用工具类直接获取指定模型的配置信息
@@ -64,7 +64,7 @@ public class OneapiPricingServiceImpl implements OneapiPricingService {
             
             // 如果提供商配置中没有价格信息，则使用模型表中的默认价格
             if (inputPrice == null || outputPrice == null) {
-                OneapiModelDO modelDO = modelMapper.selectByVendorAndName(provider, model);
+                OneapiModelDO modelDO = modelMapper.selectByModelName(model);
                 if (modelDO != null) {
                     if (inputPrice == null && modelDO.getInputPrice() != null) {
                         inputPrice = modelDO.getInputPrice();

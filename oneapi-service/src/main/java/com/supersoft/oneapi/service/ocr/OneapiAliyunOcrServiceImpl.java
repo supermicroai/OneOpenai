@@ -58,13 +58,14 @@ public class OneapiAliyunOcrServiceImpl implements OneapiOcrService {
     }
 
     /**
-     * 目前只支持阿里云ocr能力
+     * OCR service is only provided by Aliyun
+     * Apply to all providers as there's only one implementation
      * @param providerItem
      * @return
      */
     @Override
     public boolean apply(OneapiProvider providerItem) {
-        return true;
+        return providerItem != null;
     }
 
     @Override

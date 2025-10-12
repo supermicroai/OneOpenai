@@ -5,12 +5,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.supersoft.oneapi.common.OneapiSingleResult;
 import com.supersoft.oneapi.proxy.model.ocr.OcrRequest;
 import com.supersoft.oneapi.proxy.model.ocr.OcrResponse;
-import com.supersoft.oneapi.proxy.model.openai.EmbeddingRequest;
-import com.supersoft.oneapi.proxy.model.openai.EmbeddingResponse;
-import com.supersoft.oneapi.proxy.service.OneapiEmbeddingService;
 import com.supersoft.oneapi.proxy.service.OneapiOcrService;
 import com.supersoft.oneapi.service.OneapiRequestService;
-import com.supersoft.oneapi.service.embedding.OneapiEmbeddingServiceProxy;
 import com.supersoft.oneapi.service.ocr.OneapiOcrServiceProxy;
 import com.supersoft.oneapi.util.OneapiHttpUtils;
 import jakarta.annotation.Resource;
@@ -29,8 +25,13 @@ public class ProxyController {
     @Resource
     OneapiRequestService requestService;
 
-    @PostMapping("/v1/chat/completions")
-    public void completions(RequestEntity<JSONObject> request, HttpServletResponse response) {
+    /**
+     * 通用的OpenAI兼容API代理方法
+     * @param request 请求体
+     * @param response 响应体
+     * @param apiPath API路径（如 "/chat/completions" 或 "/embeddings"）
+     */
+    private void proxyOpenAICompatibleAPI(RequestEntity<JSONObject> request, HttpServletResponse response, String apiPath) {
         if (request == null) {
             requestService.badRequest(response, "入参不能为空");
             return;
@@ -60,9 +61,14 @@ public class ProxyController {
             requestBody.put("model", modelMapping);
             String jsonBody = JSON.toJSONString(requestBody);
             String api = provider.getApi();
-            provider.setApi(api + "/chat/completions");
+            provider.setApi(api + apiPath);
             return requestService.doRequest(provider, response, jsonBody, clientIp);
         });
+    }
+
+    @PostMapping("/v1/chat/completions")
+    public void completions(RequestEntity<JSONObject> request, HttpServletResponse response) {
+        proxyOpenAICompatibleAPI(request, response, "/chat/completions");
     }
 
     @PostMapping("/v1/ocr")
@@ -115,48 +121,8 @@ public class ProxyController {
     }
 
     @PostMapping("/v1/embeddings")
-    public void embeddings(RequestEntity<EmbeddingRequest> request, HttpServletResponse response) {
-        if (request == null) {
-            requestService.badRequest(response, "入参不能为空");
-            return;
-        }
-        Integer tokenId = requestService.extractTokenId(request, response);
-        if (tokenId == null) {
-            requestService.badRequest(response, "apiKey验证失败");
-            return;
-        }
-        EmbeddingRequest embeddingRequest = request.getBody();
-        if (embeddingRequest == null) {
-            requestService.badRequest(response, "入参不能为空");
-            return;
-        }
-        String model = embeddingRequest.getModel();
-        if (StringUtils.isBlank(model)) {
-            requestService.badRequest(response, "模型不能为空");
-            return;
-        }
-        // 从 HTTP 请求头获取客户端IP
-        String clientIp = OneapiHttpUtils.getClientIpAddress(request);
-        // 设置客户端IP到请求对象中
-        embeddingRequest.setClientIp(clientIp);
-        requestService.invokeRetry(response, model, embeddingRequest, provider -> {
-            // 设置tokenId到provider中
-            provider.setTokenId(tokenId);
-            OneapiEmbeddingService embeddingService = OneapiEmbeddingServiceProxy.of(provider);
-            if (embeddingService == null) {
-                return OneapiSingleResult.fail("未找到可用的embedding服务实现");
-            }
-            EmbeddingResponse embeddingResponse = embeddingService.embedding(embeddingRequest, provider);
-            try {
-                response.getWriter().write(JSON.toJSONString(embeddingResponse));
-                response.getWriter().flush();
-                return OneapiSingleResult.success();
-            } catch (Exception e) {
-                log.error("Error occurred while writing response", e);
-                return OneapiSingleResult.fail("服务调用异常: " + e.getMessage());
-            }
-        });
+    public void embeddings(RequestEntity<JSONObject> request, HttpServletResponse response) {
+        proxyOpenAICompatibleAPI(request, response, "/embeddings");
     }
-
 
 }

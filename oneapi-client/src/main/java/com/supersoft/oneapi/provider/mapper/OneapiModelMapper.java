@@ -24,10 +24,9 @@ public interface OneapiModelMapper extends BaseMapper<OneapiModelDO> {
     
     /**
      * 根据提供商和模型名称查询模型
-     * @param vendor 提供商名称
      * @param name 模型名称
      * @return 模型信息
      */
-    @Select("SELECT * FROM oneapi_model WHERE vendor = #{vendor} AND name = #{name} LIMIT 1")
-    OneapiModelDO selectByVendorAndName(@Param("vendor") String vendor, @Param("name") String name);
+    @Select("SELECT * FROM oneapi_model WHERE name = #{name} LIMIT 1")
+    OneapiModelDO selectByModelName(@Param("name") String name);
 }

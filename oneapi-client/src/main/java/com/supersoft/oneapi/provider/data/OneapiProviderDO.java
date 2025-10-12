@@ -25,7 +25,6 @@ public class OneapiProviderDO extends OneapiBaseObject {
      * 服务商名称
      */
     String name;
-    String type;
     /**
      * 服务提供商主页
      */

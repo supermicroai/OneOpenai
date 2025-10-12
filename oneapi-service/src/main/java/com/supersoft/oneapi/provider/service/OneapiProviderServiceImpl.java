@@ -184,7 +184,6 @@ public class OneapiProviderServiceImpl implements OneapiProviderService {
             providerAccounts.stream().filter(account -> account.getBalance() > 0).forEach(account -> {
                 OneapiProvider providerItem = new OneapiProvider();
                 providerItem.setName(provider);
-                providerItem.setType(item.getType());
                 providerItem.setNote(account.getNote());
                 providerItem.setApi(item.getApi());
                 providerItem.setModel(modelName);
