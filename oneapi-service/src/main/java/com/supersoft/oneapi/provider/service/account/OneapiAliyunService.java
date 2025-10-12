@@ -27,30 +27,32 @@ public class OneapiAliyunService implements OneapiAccountService {
     private final Map<String, Client> clientMap = new ConcurrentHashMap<>();
 
     @Override
-    public boolean getCredits(String apiKey, OneapiAccountDO account) {
+    public Double getCredits(OneapiAccountDO account) {
         Client client = getClient(account);
         if (client == null) {
-            return false;
+            return null;
         }
         try {
             // 获取余额
             QueryAccountBalanceResponse response = client.queryAccountBalance();
             if (response == null) {
-                return false;
+                return null;
             }
             QueryAccountBalanceResponseBody body = response.getBody();
             if (body == null) {
-                return false;
+                return null;
             }
             QueryAccountBalanceResponseBody.QueryAccountBalanceResponseBodyData bodyData = body.getData();
             if (bodyData == null) {
-                return false;
+                return null;
             }
             String amount = bodyData.getAvailableAmount();
             if (StringUtils.isBlank(amount)) {
-                return false;
+                return null;
             }
-            account.setBalance(OneapiCommonUtils.shortDouble(Double.parseDouble(amount)));
+            double balance = OneapiCommonUtils.shortDouble(Double.parseDouble(amount));
+            account.setBalance(balance);
+            
             // 获取本月账单
             QueryBillOverviewRequest request = new QueryBillOverviewRequest();
             LocalDate currentDate = LocalDate.now();
@@ -59,30 +61,34 @@ public class OneapiAliyunService implements OneapiAccountService {
             request.setBillingCycle(billMonth);
             QueryBillOverviewResponse billResponse = client.queryBillOverview(request);
             if (billResponse == null) {
-                return false;
+                // 即使获取账单失败，也返回余额
+                return balance;
             }
             QueryBillOverviewResponseBody billBody = billResponse.getBody();
             if (billBody == null) {
-                return false;
+                // 即使获取账单失败，也返回余额
+                return balance;
             }
             QueryBillOverviewResponseBody.QueryBillOverviewResponseBodyData billBodyData = billBody.getData();
             if (billBodyData == null) {
-                return false;
+                // 即使获取账单失败，也返回余额
+                return balance;
             }
             QueryBillOverviewResponseBody.QueryBillOverviewResponseBodyDataItems items = billBodyData.getItems();
             if (items == null  || CollectionUtils.isEmpty(items.getItem())) {
-                return false;
+                // 即使获取账单失败，也返回余额
+                return balance;
             }
             List<QueryBillOverviewResponseBody.QueryBillOverviewResponseBodyDataItemsItem> bills = items.getItem();
             double sum = bills.stream()
                     .mapToDouble(QueryBillOverviewResponseBody.QueryBillOverviewResponseBodyDataItemsItem::getCashAmount)
                     .sum();
             account.setCost(OneapiCommonUtils.shortDouble(sum));
-            return true;
+            return balance;
         } catch (Exception e) {
             log.error("获取余额失败, ak={}, error={}", account.getAk(), e.getMessage());
         }
-        return false;
+        return null;
     }
 
     @Override

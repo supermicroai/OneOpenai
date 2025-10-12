@@ -47,17 +47,7 @@ public interface OneapiTokenMapper extends BaseMapper<OneapiTokenDO> {
      * @return 影响行数
      */
     @Update("UPDATE oneapi_token SET token_usage = token_usage + #{tokenIncrement}, " +
-            "current_cost_usage = IFNULL(current_cost_usage, 0) + #{costIncrement}, " +
+            "current_cost_usage = COALESCE(current_cost_usage, 0) + #{costIncrement}, " +
             "last_used_time = CURRENT_TIMESTAMP, gmt_modified = CURRENT_TIMESTAMP WHERE id = #{id}")
     int updateUsageAndCost(@Param("id") Integer id, @Param("tokenIncrement") Long tokenIncrement, @Param("costIncrement") BigDecimal costIncrement);
-    
-
-    
-    /**
-     * 更新最后使用时间
-     * @param id 令牌ID
-     * @return 影响行数
-     */
-    @Update("UPDATE oneapi_token SET last_used_time = CURRENT_TIMESTAMP, gmt_modified = CURRENT_TIMESTAMP WHERE id = #{id}")
-    int updateLastUsedTime(@Param("id") Integer id);
 }

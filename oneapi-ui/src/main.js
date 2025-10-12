@@ -8,8 +8,6 @@ import App from './App.vue'
 import './style.css'
 
 import Providers from "@/pages/providers.vue";
-import Provider from '@/pages/Provider.vue'
-import Account  from "@/pages/accounts.vue";
 import Models from "@/pages/models.vue";
 import Tokens from "@/pages/tokens.vue";
 import AccessLogs from "@/pages/access-logs.vue";
@@ -22,9 +20,7 @@ const router = createRouter({
         { path: '/models', component: Models },
         { path: '/tokens', component: Tokens },
         { path: '/access-logs', component: AccessLogs },
-        { path: '/configs', component: Configs },
-        { path: '/accounts/:providerId', component: Account },
-        { path: '/provider/:providerId', component: Provider }
+        { path: '/configs', component: Configs }
     ],
 });
 

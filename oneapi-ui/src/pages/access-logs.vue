@@ -64,30 +64,34 @@
               </template>
               查询
             </a-button>
-            <a-button 
-              type="default" 
-              :loading="calculating" 
-              @click="handleRecalculateCosts"
-              style="background-color: #52c41a; border-color: #52c41a; color: white;"
-            >
-              <template #icon>
-                <CalculatorOutlined />
-              </template>
-              计算开销
-            </a-button>
           </div>
         </a-col>
       </a-row>
     </div>
     
+    <!-- 计算开销按钮 -->
+    <div style="margin-bottom: 16px;">
+      <a-button 
+        type="default" 
+        :loading="calculating" 
+        @click="handleRecalculateCosts"
+        style="background-color: #52c41a; border-color: #52c41a; color: white;"
+      >
+        <template #icon>
+          <CalculatorOutlined />
+        </template>
+        计算开销
+      </a-button>
+    </div>
+    
     <!-- 数据表格 -->
-    <a-table 
-      :columns="columns" 
-      :dataSource="accessLogs" 
+    <AutoHeightTable
+      :columns="columns"
+      :dataSource="accessLogs"
       :loading="loading"
       rowKey="id"
       :pagination="paginationConfig"
-      :scroll="{ x: 1200 }"
+      :scroll="{ x: 'max-content', y: 'max-content' }"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
@@ -115,7 +119,7 @@
           <span v-else>-</span>
         </template>
       </template>
-    </a-table>
+    </AutoHeightTable>
   </div>
 </template>
 
@@ -125,6 +129,7 @@ import { message } from 'ant-design-vue';
 import { SearchOutlined, ReloadOutlined, CalculatorOutlined } from '@ant-design/icons-vue';
 import dayjs from 'dayjs';
 import { queryUsageRecords, recalculateAllTokenCosts } from '@/api/token.js';
+import AutoHeightTable from '@/components/AutoHeightTable.vue';
 
 const accessLogs = ref([]);
 const loading = ref(false);
@@ -144,6 +149,18 @@ const pagination = ref({
   showSizeChanger: true,
   showQuickJumper: true,
   showTotal: (total) => `共 ${total} 条记录`,
+  locale: {
+    items_per_page: '条/页',
+    jump_to: '跳至',
+    jump_to_confirm: '确定',
+    page: '页',
+    prev_page: '上一页',
+    next_page: '下一页',
+    prev_5: '向前 5 页',
+    next_5: '向后 5 页',
+    prev_3: '向前 3 页',
+    next_3: '向后 3 页'
+  }
 });
 
 const columns = [
@@ -353,18 +370,9 @@ onMounted(() => {
   background: white;
   margin: 16px;
   border-radius: 8px;
-}
-
-.filter-section {
-  margin-bottom: 16px;
-}
-
-.error-msg {
-  color: #ff4d4f;
-  cursor: pointer;
-}
-
-:deep(.ant-table-thead > tr > th) {
-  background-color: #fafafa;
+  height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 </style>

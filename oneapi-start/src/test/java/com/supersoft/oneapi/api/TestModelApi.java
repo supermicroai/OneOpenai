@@ -96,12 +96,11 @@ public class TestModelApi {
      */
     public void ocrTest() {
         String data = JSON.toJSONString(Map.of(
-                "url", "https://tc.z.wiki/autoupload/f/vn25-tb2th3ipZ6BVJ3qt1dp1U-2uSN2DL7hMUxDA4Wyl5f0KlZfm6UsKj-HyTuv/20251001/LBGM/555X76/test.png/webp",
-                "model", "ocr-ali-v1"
+        "url", "https://tc.z.wiki/autoupload/f/vn25-tb2th3ipZ6BVJ3qt1dp1U-2uSN2DL7hMUxDA4Wyl5f0KlZfm6UsKj-HyTuv/20251001/LBGM/555X76/test.png/webp",
+        "model", "ocr-ali-v1"
         ));
         Map<String, String> head = getHead();
-        String post = OneapiHttpUtils.post(BASE_URL + "/ocr",
-                data, head, 60000);
+        String post = OneapiHttpUtils.post(BASE_URL + "/ocr", data, head, 60000);
         log.info(post);
     }
 
@@ -129,7 +128,7 @@ public class TestModelApi {
         log.info("图片文字识别完成，耗时: {}ms", cost);
         
         if (response.choices() != null && !response.choices().isEmpty()) {
-            String extractedText = response.choices().get(0).message().content();
+            String extractedText = response.choices().getFirst().message().content();
             log.info("识别到的文字内容:\n{}", extractedText);
         } else {
             log.warn("未能从响应中获取到文字识别结果");

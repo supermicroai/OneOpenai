@@ -11,9 +11,12 @@ import com.supersoft.oneapi.provider.data.OneapiProviderDO;
 import com.supersoft.oneapi.provider.mapper.OneapiAccountMapper;
 import com.supersoft.oneapi.provider.mapper.OneapiModelMapper;
 import com.supersoft.oneapi.provider.mapper.OneapiProviderMapper;
+import com.supersoft.oneapi.provider.job.OneapiAccountUpdateJob;
 import com.supersoft.oneapi.proxy.service.OneapiConfigFacade;
+import com.supersoft.oneapi.service.alert.OneapiAlertManager;
 import com.supersoft.oneapi.token.data.OneapiTokenUsageDO;
 import com.supersoft.oneapi.token.service.OneapiTokenService;
+import com.supersoft.oneapi.util.BooleanUtils;
 import io.micrometer.common.util.StringUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +39,10 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
     OneapiTokenService oneapiTokenService;
     @Resource
     OneapiConfigMapper configMapper;
+    @Resource
+    OneapiAlertManager oneapiAlertManager;
+    @Resource
+    OneapiAccountUpdateJob oneapiAccountUpdateJob;
 
     @Override
     public OneapiMultiResult<OneapiModelDO> getModels() {
@@ -107,7 +114,7 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
     public OneapiMultiResult<OneapiModelDO> getEnabledModels(String type) {
         try {
             QueryWrapper<OneapiModelDO> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("enable", true);
+            queryWrapper.eq("enable", BooleanUtils.toInteger(true));
             if (type != null && !type.trim().isEmpty()) {
                 queryWrapper.eq("type", type);
             }
@@ -215,7 +222,7 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
             return OneapiSingleResult.fail("Account not found");
         }
         account.setGmtModified(new Date());
-        account.setStatus(enable);
+        account.setStatus(BooleanUtils.toInteger(enable));
         accountMapper.updateById(account);
         return OneapiSingleResult.success();
     }
@@ -259,6 +266,26 @@ public class OneapiConfigFacadeImpl implements OneapiConfigFacade {
         } catch (Exception e) {
             log.error("更新系统配置异常", e);
             return OneapiSingleResult.fail("更新系统配置失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public OneapiSingleResult<Boolean> updateAllAccountBalances() {
+        try {
+            log.info("手动触发更新所有账户余额");
+            OneapiAccountUpdateJob.UpdateResult result = oneapiAccountUpdateJob.updateAllAccountBalances();
+            
+            if (result.getFailCount() > 0) {
+                log.warn("更新账户余额完成，成功: {}, 失败: {}", result.getSuccessCount(), result.getFailCount());
+                return OneapiSingleResult.success(true);
+            } else {
+                log.info("更新账户余额完成，成功: {}, 失败: {}", result.getSuccessCount(), result.getFailCount());
+                return OneapiSingleResult.success(true);
+            }
+            
+        } catch (Exception e) {
+            log.error("手动更新账户余额异常", e);
+            return OneapiSingleResult.fail("更新账户余额失败: " + e.getMessage());
         }
     }
 }

@@ -29,5 +29,5 @@ public class OneapiAccountDO extends OneapiBaseObject {
 
     Double cost;
     Double balance;
-    Boolean status;
+    Integer status;
 }

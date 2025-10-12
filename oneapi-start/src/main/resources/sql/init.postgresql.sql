@@ -1,47 +1,65 @@
 -- 删除表（如果存在）
-drop table if exists oneapi_account;
-drop table if exists oneapi_config;
-drop table if exists oneapi_model;
-drop table if exists oneapi_provider;
-drop table if exists oneapi_token;
-drop table if exists oneapi_token_usage;
+DROP TABLE IF EXISTS oneapi_token_usage;
+DROP TABLE IF EXISTS oneapi_token;
+DROP TABLE IF EXISTS oneapi_provider;
+DROP TABLE IF EXISTS oneapi_model;
+DROP TABLE IF EXISTS oneapi_config;
+DROP TABLE IF EXISTS oneapi_account;
 
 -- 创建账户表
-create table oneapi_account
+CREATE TABLE oneapi_account
 (
-    id           int auto_increment primary key,
-    gmt_create   timestamp default CURRENT_TIMESTAMP null,
-    gmt_modified timestamp default CURRENT_TIMESTAMP null,
-    provider_code varchar(32)                        null comment '关联的提供商代码',
-    name         varchar(32)                         null comment '账号类型',
-    note         varchar(64)                         null,
-    api_key      varchar(128)                        null,
-    ak           varchar(32)                         null,
-    sk           varchar(32)                         null,
-    cost         double                              null comment '已花费金额',
-    balance      double                              null comment '账户余额',
-    status       int                                 null comment '是否启用 1启用 0关闭 -1欠费'
+    id           SERIAL PRIMARY KEY,
+    gmt_create   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    gmt_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    provider_code VARCHAR(32),
+    name         VARCHAR(32),
+    note         VARCHAR(64),
+    api_key      VARCHAR(128),
+    ak           VARCHAR(32),
+    sk           VARCHAR(32),
+    cost         DOUBLE PRECISION,
+    balance      DOUBLE PRECISION,
+    status       INTEGER
 );
+
+COMMENT ON TABLE oneapi_account IS '账户表';
+COMMENT ON COLUMN oneapi_account.provider_code IS '关联的提供商代码';
+COMMENT ON COLUMN oneapi_account.name IS '账号类型';
+COMMENT ON COLUMN oneapi_account.cost IS '已花费金额';
+COMMENT ON COLUMN oneapi_account.balance IS '账户余额';
+COMMENT ON COLUMN oneapi_account.status IS '是否启用 1启用 0关闭 -1欠费';
 
 -- 插入账户数据
 INSERT INTO oneapi_account (provider_code, name, note, api_key, ak, sk, cost, balance, status) VALUES
     ('openrouter_llm', 'openrouter', 'admin@gmail.com', 'sk-or-v1-this-is-a-demo-key', null, null, 0, 50, 1);
 
 -- 创建配置表
-create table oneapi_config
+CREATE TABLE oneapi_config
 (
-    id           int auto_increment primary key,
-    gmt_create   timestamp default CURRENT_TIMESTAMP,
-    gmt_modified timestamp default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-    config_group varchar(16),
-    config_key   varchar(32),
-    config_value clob,
-    version      int default 0 not null,
-    note         clob,
-    status       int default 1 not null,
-    env          varchar(8) default 'global',
-    constraint uk_key unique (config_key)
+    id           SERIAL PRIMARY KEY,
+    gmt_create   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    gmt_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    config_group VARCHAR(16),
+    config_key   VARCHAR(32),
+    config_value TEXT,
+    version      INTEGER DEFAULT 0 NOT NULL,
+    note         TEXT,
+    status       INTEGER DEFAULT 1 NOT NULL,
+    env          VARCHAR(8) DEFAULT 'global',
+    CONSTRAINT uk_key UNIQUE (config_key)
 );
+
+COMMENT ON TABLE oneapi_config IS '配置表';
+COMMENT ON COLUMN oneapi_config.gmt_create IS '创建时间';
+COMMENT ON COLUMN oneapi_config.gmt_modified IS '修改时间';
+COMMENT ON COLUMN oneapi_config.config_group IS '配置分组';
+COMMENT ON COLUMN oneapi_config.config_key IS '配置键';
+COMMENT ON COLUMN oneapi_config.config_value IS '配置值';
+COMMENT ON COLUMN oneapi_config.version IS '版本号';
+COMMENT ON COLUMN oneapi_config.note IS '备注';
+COMMENT ON COLUMN oneapi_config.status IS '状态 1启用 0禁用';
+COMMENT ON COLUMN oneapi_config.env IS '环境';
 
 -- 插入配置数据
 INSERT INTO oneapi_config (config_group, config_key, config_value, version, note, status, env) VALUES
@@ -53,19 +71,30 @@ INSERT INTO oneapi_config (config_group, config_key, config_value, version, note
     ('服务', 'oneapi.retry', '3', 0, '服务重试最大次数', 1, 'global');
 
 -- 创建模型表
-create table oneapi_model
+CREATE TABLE oneapi_model
 (
-    id           int auto_increment primary key,
-    gmt_create   timestamp default CURRENT_TIMESTAMP,
-    gmt_modified timestamp default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-    name         varchar(32),
-    vendor       varchar(32),
-    type         varchar(16),
-    input_price  decimal(10,6) default 0 comment '输入token价格（每1M个token）',
-    output_price decimal(10,6) default 0 comment '输出token价格（每1M个token）',
-    description  varchar(512) comment '模型描述',
-    enable       tinyint default 1
+    id           SERIAL PRIMARY KEY,
+    gmt_create   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    gmt_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    name         VARCHAR(32),
+    vendor       VARCHAR(32),
+    type         VARCHAR(16),
+    input_price  DECIMAL(10,6) DEFAULT 0,
+    output_price DECIMAL(10,6) DEFAULT 0,
+    description  VARCHAR(512),
+    enable       SMALLINT DEFAULT 1
 );
+
+COMMENT ON TABLE oneapi_model IS '模型表';
+COMMENT ON COLUMN oneapi_model.gmt_create IS '创建时间';
+COMMENT ON COLUMN oneapi_model.gmt_modified IS '修改时间';
+COMMENT ON COLUMN oneapi_model.name IS '模型名称';
+COMMENT ON COLUMN oneapi_model.vendor IS '服务商';
+COMMENT ON COLUMN oneapi_model.type IS '模型类型';
+COMMENT ON COLUMN oneapi_model.input_price IS '输入token价格（每1M个token）';
+COMMENT ON COLUMN oneapi_model.output_price IS '输出token价格（每1M个token）';
+COMMENT ON COLUMN oneapi_model.description IS '模型描述';
+COMMENT ON COLUMN oneapi_model.enable IS '是否启用';
 
 -- 插入模型数据
 INSERT INTO oneapi_model (name, vendor, type, input_price, output_price, enable) VALUES
@@ -105,20 +134,32 @@ INSERT INTO oneapi_model (name, vendor, type, input_price, output_price, enable)
     ('text-embedding-v3', 'Qwen', 'embedding', 0.1, 0.1, 1);
 
 -- 创建服务提供商表
-create table oneapi_provider
+CREATE TABLE oneapi_provider
 (
-    id           int auto_increment primary key,
-    gmt_create   timestamp default CURRENT_TIMESTAMP,
-    gmt_modified timestamp default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-    code         varchar(32) not null unique comment '提供者代码',
-    name         varchar(32),
-    type         varchar(16),
-    url          varchar(256),
-    api          varchar(256),
-    models       clob,
-    service      varchar(64),
-    enable       int
+    id           SERIAL PRIMARY KEY,
+    gmt_create   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    gmt_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    code         VARCHAR(32) NOT NULL UNIQUE,
+    name         VARCHAR(32),
+    type         VARCHAR(16),
+    url          VARCHAR(256),
+    api          VARCHAR(256),
+    models       TEXT,
+    service      VARCHAR(64),
+    enable       INTEGER
 );
+
+COMMENT ON TABLE oneapi_provider IS '服务提供商表';
+COMMENT ON COLUMN oneapi_provider.gmt_create IS '创建时间';
+COMMENT ON COLUMN oneapi_provider.gmt_modified IS '修改时间';
+COMMENT ON COLUMN oneapi_provider.code IS '提供者代码，唯一标识';
+COMMENT ON COLUMN oneapi_provider.name IS '服务商名称';
+COMMENT ON COLUMN oneapi_provider.type IS '服务类型';
+COMMENT ON COLUMN oneapi_provider.url IS '服务提供商主页';
+COMMENT ON COLUMN oneapi_provider.api IS '基础api地址';
+COMMENT ON COLUMN oneapi_provider.models IS '支持的模型';
+COMMENT ON COLUMN oneapi_provider.service IS '提供者对应的各类服务bean';
+COMMENT ON COLUMN oneapi_provider.enable IS '是否启用';
 
 -- 插入服务提供商数据（使用新的JSON格式）
 INSERT INTO oneapi_provider (code, name, type, url, api, models, service, enable) VALUES
@@ -135,44 +176,90 @@ INSERT INTO oneapi_provider (code, name, type, url, api, models, service, enable
     ('bedrock_llm', 'bedrock', 'llm', 'https://aws.amazon.com/bedrock', 'https://bedrock-runtime.{region}.amazonaws.com', '{"bedrock-claude-3-haiku":{"alias":"anthropic.claude-3-haiku-20240307-v1:0","inputPrice":0.25,"outputPrice":1.25},"bedrock-claude-3-sonnet":{"alias":"anthropic.claude-3-sonnet-20240229-v1:0","inputPrice":3.0,"outputPrice":15.0},"bedrock-claude-3.5-sonnet":{"alias":"anthropic.claude-3-5-sonnet-20241022-v2:0","inputPrice":3.0,"outputPrice":15.0}}', 'bedrockService', 1);
 
 -- 令牌管理表
-create table oneapi_token
+CREATE TABLE oneapi_token
 (
-    id           int auto_increment primary key,
-    gmt_create   timestamp default CURRENT_TIMESTAMP,
-    gmt_modified timestamp default CURRENT_TIMESTAMP,
-    name         varchar(64) not null comment '令牌名称',
-    api_key      varchar(128) not null unique comment 'API密钥',
-    description  varchar(256) comment '令牌描述',
-    expire_time  timestamp null comment '过期时间，null表示永不过期',
-    max_usage    bigint default -1 comment '最大token数限制，-1表示不限制',
-    token_usage  bigint default 0 comment '当前token使用量',
-    max_cost_limit decimal(10,6) default -1 comment '最大费用限制，-1表示不限制',
-    current_cost_usage decimal(10,6) default 0 comment '当前费用使用量',
-    status       int default 1 comment '状态：1启用，0禁用',
-    creator      varchar(64) comment '创建者',
-    last_used_time timestamp null comment '最后使用时间'
+    id           SERIAL PRIMARY KEY,
+    gmt_create   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    gmt_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    name         VARCHAR(64) NOT NULL,
+    api_key      VARCHAR(128) NOT NULL UNIQUE,
+    description  VARCHAR(256),
+    expire_time  TIMESTAMP NULL,
+    max_usage    BIGINT DEFAULT -1,
+    token_usage  BIGINT DEFAULT 0,
+    max_cost_limit DECIMAL(10,6) DEFAULT -1,
+    current_cost_usage DECIMAL(10,6) DEFAULT 0,
+    status       INTEGER DEFAULT 1,
+    creator      VARCHAR(64),
+    last_used_time TIMESTAMP NULL
 );
 
+COMMENT ON TABLE oneapi_token IS '令牌管理表';
+COMMENT ON COLUMN oneapi_token.gmt_create IS '创建时间';
+COMMENT ON COLUMN oneapi_token.gmt_modified IS '修改时间';
+COMMENT ON COLUMN oneapi_token.name IS '令牌名称';
+COMMENT ON COLUMN oneapi_token.api_key IS 'API密钥';
+COMMENT ON COLUMN oneapi_token.description IS '令牌描述';
+COMMENT ON COLUMN oneapi_token.expire_time IS '过期时间，null表示永不过期';
+COMMENT ON COLUMN oneapi_token.max_usage IS '最大token数限制，-1表示不限制';
+COMMENT ON COLUMN oneapi_token.token_usage IS '当前token使用量';
+COMMENT ON COLUMN oneapi_token.max_cost_limit IS '最大费用限制，-1表示不限制';
+COMMENT ON COLUMN oneapi_token.current_cost_usage IS '当前费用使用量';
+COMMENT ON COLUMN oneapi_token.status IS '状态：1启用，0禁用';
+COMMENT ON COLUMN oneapi_token.creator IS '创建者';
+COMMENT ON COLUMN oneapi_token.last_used_time IS '最后使用时间';
+
 -- 令牌使用记录表
-create table oneapi_token_usage
+CREATE TABLE oneapi_token_usage
 (
-    id           int auto_increment primary key,
-    gmt_create   timestamp default CURRENT_TIMESTAMP,
-    gmt_modified timestamp default CURRENT_TIMESTAMP,
-    token_id     int comment '令牌ID',
-    provider     varchar(64) comment '服务提供商',
-    model        varchar(64) comment '使用的模型',
-    request_tokens int default 0 comment '请求令牌数',
-    response_tokens int default 0 comment '响应令牌数',
-    cost         decimal(10,10) default 0 comment '成本',
-    status       int comment '调用状态：1成功，0失败',
-    error_msg    varchar(512) comment '错误信息',
-    ip_address   varchar(45) comment '客户端IP地址'
+    id           SERIAL PRIMARY KEY,
+    gmt_create   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    gmt_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    token_id     INTEGER,
+    provider     VARCHAR(64),
+    model        VARCHAR(64),
+    request_tokens INTEGER DEFAULT 0,
+    response_tokens INTEGER DEFAULT 0,
+    cost         DECIMAL(10,10) DEFAULT 0,
+    status       INTEGER,
+    error_msg    VARCHAR(512),
+    ip_address   VARCHAR(45)
 );
+
+COMMENT ON TABLE oneapi_token_usage IS '令牌使用记录表';
+COMMENT ON COLUMN oneapi_token_usage.gmt_create IS '创建时间';
+COMMENT ON COLUMN oneapi_token_usage.gmt_modified IS '修改时间';
+COMMENT ON COLUMN oneapi_token_usage.token_id IS '令牌ID';
+COMMENT ON COLUMN oneapi_token_usage.provider IS '服务提供商';
+COMMENT ON COLUMN oneapi_token_usage.model IS '使用的模型';
+COMMENT ON COLUMN oneapi_token_usage.request_tokens IS '请求令牌数';
+COMMENT ON COLUMN oneapi_token_usage.response_tokens IS '响应令牌数';
+COMMENT ON COLUMN oneapi_token_usage.cost IS '成本';
+COMMENT ON COLUMN oneapi_token_usage.status IS '调用状态：1成功，0失败';
+COMMENT ON COLUMN oneapi_token_usage.error_msg IS '错误信息';
+COMMENT ON COLUMN oneapi_token_usage.ip_address IS '客户端IP地址';
 
 -- 插入默认的令牌示例
 INSERT INTO oneapi_token (name, api_key, description, creator, status) VALUES
     ('默认令牌', 'sk-oneapi-default-token-2024', '系统默认令牌，用于测试', 'system', 1);
 
 -- 创建索引
-create index idx_token_usage_gmt_create on oneapi_token_usage(gmt_create);
+CREATE INDEX idx_token_usage_gmt_create ON oneapi_token_usage(gmt_create);
+
+-- 创建触发器来自动更新gmt_modified字段
+CREATE OR REPLACE FUNCTION update_modified_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.gmt_modified = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- 为所有表添加自动更新gmt_modified的触发器
+CREATE TRIGGER update_oneapi_account_modified BEFORE UPDATE ON oneapi_account FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+CREATE TRIGGER update_oneapi_config_modified BEFORE UPDATE ON oneapi_config FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+CREATE TRIGGER update_oneapi_model_modified BEFORE UPDATE ON oneapi_model FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+CREATE TRIGGER update_oneapi_provider_modified BEFORE UPDATE ON oneapi_provider FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+CREATE TRIGGER update_oneapi_token_modified BEFORE UPDATE ON oneapi_token FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+CREATE TRIGGER update_oneapi_token_usage_modified BEFORE UPDATE ON oneapi_token_usage FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+

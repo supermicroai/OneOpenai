@@ -11,7 +11,6 @@ import javax.sql.DataSource;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Database initializer
@@ -21,14 +20,19 @@ import java.util.stream.Stream;
 public class OneapiDatabaseInitializer implements CommandLineRunner {
     private static final String H2 = "H2";
     private static final String MYSQL = "MySQL";
+    private static final String POSTGRESQL = "PostgreSQL";
     private static final String H2_TEST_SQL = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'ONEAPI_MODEL'";
     private static final String MYSQL_TEST_SQL = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'oneapi_model'";
+    private static final String POSTGRESQL_TEST_SQL = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'oneapi_model'";
 
     @Value("classpath:sql/init.h2.sql")
     private Resource initH2Sql;
 
     @Value("classpath:sql/init.mysql.sql")
     private Resource initMysqlSql;
+
+    @Value("classpath:sql/init.postgresql.sql")
+    private Resource initPostgresqlSql;
 
     private final DataSource dataSource;
     private final JdbcTemplate jdbcTemplate;
@@ -51,6 +55,8 @@ public class OneapiDatabaseInitializer implements CommandLineRunner {
             sqlResource = initH2Sql;
         } else if (driverName.contains(MYSQL)) {
             sqlResource = initMysqlSql;
+        } else if (driverName.contains(POSTGRESQL)) {
+            sqlResource = initPostgresqlSql;
         } else {
             throw new UnsupportedOperationException("Unsupported database: " + driverName);
         }
@@ -60,7 +66,16 @@ public class OneapiDatabaseInitializer implements CommandLineRunner {
     private boolean isDatabaseInitialized() {
         try {
             String driverName = dataSource.getConnection().getMetaData().getDriverName();
-            String testSql = driverName.contains(H2) ? H2_TEST_SQL : MYSQL_TEST_SQL;
+            String testSql;
+            if (driverName.contains(H2)) {
+                testSql = H2_TEST_SQL;
+            } else if (driverName.contains(MYSQL)) {
+                testSql = MYSQL_TEST_SQL;
+            } else if (driverName.contains(POSTGRESQL)) {
+                testSql = POSTGRESQL_TEST_SQL;
+            } else {
+                throw new UnsupportedOperationException("Unsupported database: " + driverName);
+            }
             Integer count = jdbcTemplate.queryForObject(testSql, Integer.class);
             return count != null && count > 0;
         } catch (Exception e) {

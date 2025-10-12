@@ -8,10 +8,10 @@ public interface OneapiAccountService {
 
     /**
      * 获取已经花费和余额
-     * @param apiKey
+     * @param account
      * @return
      */
-    boolean getCredits(String apiKey, OneapiAccountDO account);
+    Double getCredits(OneapiAccountDO account);
 
     void analysis(String content);
 }

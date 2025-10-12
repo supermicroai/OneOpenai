@@ -18,10 +18,55 @@ OneAPI是一个openai代理应用，旨在提供统一的openai协议下的llm�
   - 支持在账号调用持续异常下的自动熔断能力, 并在一定事件后恢复对账号的访问
   - 支持对部分三方代理的余额自动更新能力(大部分三方代理没有提供余额查询接口, 需要手动维护余额字段), 并支持钉钉群通知
   - 可通过`提供者:模型名`的方式指定调用的三方代理及模型, 例如`openrouter:gpt-4o-mini`
-- 提供了基于aliyun服务的ocr代理服务. 目前仅支持阿里云的ocr服务, 由于ocr服务没有一个广泛认同的协议, 目前ocr接口协议是私有定义, 可根据需求自行修改
-- 应用支持h2和mysql, 请自行在application.properties中修改数据源配置并打包
+  - 提供了基于aliyun服务的ocr代理服务. 目前仅支持阿里云的ocr服务, 由于ocr服务没有一个广泛认同的协议, 目前ocr接口协议是私有定义, 可根据需求自行修改
+  - 应用支持H2、MySQL和PostgreSQL数据库，请自行在application.properties中修改数据源配置并打包
   - 在首次启动时会自动初始化数据库. 初始化过程包括创建必要的表和插入初始数据.
   - 初始化数据中的账号数据为纯测试数据无法调用, 请自行注册第三方账号并修改账号配置.
+
+## 数据库配置
+
+应用支持三种数据库类型：
+
+### H2数据库（默认）
+H2默认用于开发和测试，无需额外配置。
+
+```properties
+# H2数据库配置（默认）
+spring.datasource.url=jdbc:h2:file:./data/oneapi;AUTO_RECONNECT=TRUE
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+```
+
+### MySQL数据库
+推荐用于生产环境。
+
+```properties
+# MySQL数据库配置
+spring.datasource.url=jdbc:mysql://localhost:3306/oneapi?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.username=root
+spring.datasource.password=password
+```
+
+### PostgreSQL数据库
+PostgreSQL也支持生产环境，具有高级特性。
+
+```properties
+# PostgreSQL数据库配置
+spring.datasource.url=jdbc:postgresql://localhost:5432/oneapi
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.username=postgres
+spring.datasource.password=password
+```
+
+### 数据库设置说明
+
+1. **选择数据库**：在`application.properties`中注释掉当前数据库配置，取消注释所需的数据库配置
+2. **创建数据库**：在您选择的数据库系统中创建名为`oneapi`的数据库
+3. **启动应用**：应用会自动检测数据库类型并初始化架构
+
+**注意**：应用会在首次启动时自动创建所有必要的表和插入初始数据，无需手动设置数据库。
 
 ## 接口使用方式
 完全兼容openai的llm代理接口, 请参考openai的llm[接口文档](https://platform.openai.com/docs/introduction).
@@ -56,45 +101,3 @@ OneAPI是一个openai代理应用，旨在提供统一的openai协议下的llm�
 - 页面中点击`新增账号`按钮可以新增账号
 - 点击`是否启用`按钮可以启用或禁用账号
 ![账号列表.png](doc/img2.png)
-
-## 二次开发
-### 如何编译镜像
-1. 编译前端代码
-    ```bash
-    cd oneapi-ui
-    pnpm install
-    pnpm run build
-    ```
-2. 编译后端代码
-- 代码编译后会将最终生成的fatjar拷贝到docker目录下用于构建镜像
-    ```bash
-    mvn clean package -Pdev
-    ```
-3. 构建镜像
-- 将账号从supermicroai改为你自己的账号
-    ```bash
-    cd APP-META/docker-config
-    docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile.jdk21 -t supermicroai/almalinux9-jdk21:$(date +%Y%m%d) -t supermicroai/almalinux9-jdk21:latest .
-    docker buildx build --platform linux/amd64,linux/arm64 -t supermicroai/oneapi:$(date +%Y%m%d) -t supermicroai/oneapi:latest .
-    docker buildx build --platform linux/amd64,linux/arm64 -t supermicroai/oneapi:$(date +%Y%m%d) -t supermicroai/oneapi:latest --push .
-    ```
-
-## 部署方式
-
-### Docker 部署
-1. 拉取 Docker 镜像：
-    ```bash
-    docker pull supermicroai/oneapi
-    ```
-
-2. 运行 Docker 容器：
-    ```bash
-    docker run -d -p 7001:7001 --name oneapi supermicroai/oneapi
-    ```
-
-### Kubernetes 部署
-1. 修改部署文件[app.yaml](APP-META/app.yaml)中的`image`字段编译完成的镜像地址 
-2. 部署到 Kubernetes 集群：
-    ```bash
-    kubectl apply -f app.yaml
-    ```

@@ -41,6 +41,12 @@
         <appender-ref ref="QOS"/>
     </logger>
 
+    <!-- 设置阿里云TeaModel日志级别为ERROR -->
+    <logger name="com.aliyun.tea.TeaModel" level="ERROR" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="APPLICATION"/>
+    </logger>
+
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="APPLICATION"/>

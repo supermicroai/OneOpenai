@@ -57,7 +57,7 @@
             @click="() => (collapsed = !collapsed)"
           />
         </a-layout-header>
-        <a-layout-content style="margin: 0; background: #f0f2f5">
+        <a-layout-content style="margin: 0; background: #f0f2f5;">
           <router-view />
         </a-layout-content>
       </a-layout>

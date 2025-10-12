@@ -56,20 +56,30 @@
 
     <!-- Add Provider Button -->
     <div class="action-bar" style="margin-bottom: 16px;">
-      <a-button type="primary" @click="showCreateModal">
-        <template #icon>
-          <PlusOutlined />
-        </template>
-        添加提供商
-      </a-button>
+      <a-space>
+        <a-button type="primary" @click="showCreateModal">
+          <template #icon>
+            <PlusOutlined />
+          </template>
+          添加提供商
+        </a-button>
+        <a-button type="default" @click="updateAccountBalances" :loading="updateBalanceLoading" 
+                  class="update-balance-btn">
+          <template #icon>
+            <ReloadOutlined />
+          </template>
+          更新账户余额
+        </a-button>
+      </a-space>
     </div>
-    
-    <a-table 
-      :columns="columns" 
-      :data-source="paginatedData" 
+
+    <AutoHeightTable
+      :columns="columns"
+      :data-source="paginatedData"
       :pagination="paginationConfig"
       :loading="loading"
       row-key="id"
+      :scroll="{ x: 'max-content', y: 'max-content' }"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'url'">
@@ -104,7 +114,7 @@
           </a-space>
         </template>
       </template>
-    </a-table>
+    </AutoHeightTable>
 
     <!-- Edit Provider Modal -->
     <a-modal
@@ -233,7 +243,7 @@
       title="账号管理"
       :footer="null"
       @cancel="handleAccountCancel"
-      :width="900"
+      :width="1200"
     >
       <!-- Add Account Button -->
       <div style="margin-bottom: 16px;">
@@ -251,6 +261,7 @@
           :data-source="currentAccounts" 
           :pagination="false"
           size="small"
+          :scroll="{ x: 'max-content' }"
         >
           <template #bodyCell="{ column, record }">
             <template v-if="column.dataIndex === 'name'">
@@ -270,7 +281,7 @@
               />
             </template>
             <template v-else-if="column.dataIndex === 'ak'">
-              <span v-if="!isEditing(record)">{{ record.ak || '-' }}</span>
+              <span v-if="!isEditing(record)" :title="record.ak" style="word-break: break-all; display: inline-block; max-width: 100%;">{{ maskAk(record.ak) || '-' }}</span>
               <a-input 
                 v-else
                 v-model:value="record.ak" 
@@ -278,11 +289,21 @@
               />
             </template>
             <template v-else-if="column.dataIndex === 'sk'">
-              <span v-if="!isEditing(record)">{{ record.sk || '-' }}</span>
+              <span v-if="!isEditing(record)" :title="record.sk" style="word-break: break-all; display: inline-block; max-width: 100%;">{{ maskSk(record.sk) || '-' }}</span>
               <a-input 
                 v-else
                 v-model:value="record.sk" 
                 placeholder="请输入SK"
+              />
+            </template>
+            <template v-else-if="column.dataIndex === 'balance'">
+              <span v-if="!isEditing(record)">{{ record.balance ? record.balance.toFixed(2) : '0.00' }}</span>
+              <a-input-number 
+                v-else
+                v-model:value="record.balance" 
+                :precision="2"
+                placeholder="请输入余额"
+                style="width: 100%"
               />
             </template>
             <template v-else-if="column.dataIndex === 'status'">
@@ -333,12 +354,14 @@
 <script setup>
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import { getProviders, enableProvider, getProvider, updateProvider, getModels, getAccounts, updateAccount, deleteAccount } from "@/api/provider.js";
+import { getProviders, enableProvider, getProvider, updateProvider, getModels, getAccounts, updateAccount, deleteAccount, updateAllAccountBalances } from "@/api/provider.js";
 import { message, Modal } from "ant-design-vue";
 import { PlusOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons-vue';
+import AutoHeightTable from '@/components/AutoHeightTable.vue';
 
 const router = useRouter();
 const loading = ref(false);
+const updateBalanceLoading = ref(false);
 const providerList = ref([]);
 const filteredProviderList = ref([]);
 
@@ -392,7 +415,8 @@ const columns = [
   {
     title: '操作',
     dataIndex: 'action',
-    width: 150
+    width: 150,
+    fixed: 'right'
   }
 ];
 
@@ -401,9 +425,21 @@ const pagination = ref({
   current: 1,
   pageSize: 10,
   total: 0,
-  showSizeChanger: true,
+  showSizeChanger: false,
   showQuickJumper: true,
   showTotal: (total) => `共 ${total} 条记录`,
+  locale: {
+    items_per_page: '条/页',
+    jump_to: '跳至',
+    jump_to_confirm: '确定',
+    page: '页',
+    prev_page: '上一页',
+    next_page: '下一页',
+    prev_5: '向前 5 页',
+    next_5: '向后 5 页',
+    prev_3: '向前 3 页',
+    next_3: '向后 3 页'
+  }
 });
 
 const getModelTypeColor = (modelName) => {
@@ -479,13 +515,8 @@ const paginationConfig = computed(() => ({
   showSizeChanger: pagination.value.showSizeChanger,
   showQuickJumper: pagination.value.showQuickJumper,
   showTotal: pagination.value.showTotal,
-  onChange: (page, pageSize) => {
+  onChange: (page) => {
     pagination.value.current = page;
-    pagination.value.pageSize = pageSize;
-  },
-  onShowSizeChange: (current, size) => {
-    pagination.value.current = 1;
-    pagination.value.pageSize = size;
   }
 }));
 
@@ -526,6 +557,21 @@ const loadProviders = async () => {
     message.error('获取提供商列表失败：' + error.message);
   } finally {
     loading.value = false;
+  }
+};
+
+// 更新所有账户余额
+const updateAccountBalances = async () => {
+  updateBalanceLoading.value = true;
+  try {
+    await updateAllAccountBalances();
+    message.success('账户余额更新成功');
+    // 重新加载提供商列表以显示最新的余额信息
+    await loadProviders();
+  } catch (error) {
+    message.error('更新账户余额失败：' + error.message);
+  } finally {
+    updateBalanceLoading.value = false;
   }
 };
 
@@ -631,22 +677,27 @@ const accountColumns = [
   {
     title: '名称',
     dataIndex: 'name',
-    width: 120,
+    width: 100,
   },
   {
     title: 'API Key',
     dataIndex: 'apiKey',
-    width: 200,
+    width: 180,
   },
   {
     title: 'AK',
     dataIndex: 'ak',
-    width: 120,
+    width: 150,
   },
   {
     title: 'SK',
     dataIndex: 'sk',
-    width: 120,
+    width: 200,
+  },
+  {
+    title: '余额',
+    dataIndex: 'balance',
+    width: 100,
   },
   {
     title: '状态',
@@ -671,6 +722,28 @@ const maskApiKey = (apiKey) => {
   return `${start}${middle}${end}`;
 };
 
+// 脱敏显示AK
+const maskAk = (ak) => {
+  if (!ak || ak.length <= 8) {
+    return ak;
+  }
+  const start = ak.substring(0, 4);
+  const end = ak.substring(ak.length - 4);
+  const middle = '*'.repeat(Math.min(ak.length - 8, 12)); // 最多显示12个星号
+  return `${start}${middle}${end}`;
+};
+
+// 脱敏显示SK
+const maskSk = (sk) => {
+  if (!sk || sk.length <= 8) {
+    return sk;
+  }
+  const start = sk.substring(0, 4);
+  const end = sk.substring(sk.length - 4);
+  const middle = '*'.repeat(Math.min(sk.length - 8, 12)); // 最多显示12个星号
+  return `${start}${middle}${end}`;
+};
+
 // Edit modal pagination
 const editModelPagination = computed(() => ({
   current: editModelCurrentPage.value,
@@ -692,12 +765,25 @@ const paginatedEditModels = computed(() => {
 // Available models for adding
 const availableModelsForAdd = computed(() => {
   const currentModelNames = Object.keys(currentProvider.value.models || {});
-  return modelList.value
-    .filter(model => model.type === currentProvider.value.type && !currentModelNames.includes(model.name))
+  console.log('Debug - Current provider type:', currentProvider.value.type);
+  console.log('Debug - Current model names:', currentModelNames);
+  console.log('Debug - All models:', modelList.value);
+  
+  const filtered = modelList.value
+    .filter(model => {
+      const matchesType = model.type === currentProvider.value.type;
+      const notAlreadyAdded = !currentModelNames.includes(model.name);
+      const isEnabled = model.enable === true || model.enabled === true; // 支持两种字段名
+      console.log(`Debug - Model ${model.name}: type=${model.type}, matchesType=${matchesType}, notAlreadyAdded=${notAlreadyAdded}, isEnabled=${isEnabled}`);
+      return matchesType && notAlreadyAdded && isEnabled;
+    })
     .map(model => ({
       label: model.name,
       value: model.name
     }));
+    
+  console.log('Debug - Available models for add:', filtered);
+  return filtered;
 });
 
 // Show edit modal
@@ -1106,36 +1192,45 @@ onMounted(() => {
   background: white;
   margin: 16px;
   border-radius: 8px;
-}
-
-.filter-section {
-  margin-bottom: 16px;
-}
-
-.action-bar {
-  margin-bottom: 16px;
+  height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .models {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  align-items: center;
 }
 
 .model {
-  cursor: pointer;
-  margin-bottom: 5px;
+  margin: 2px 0;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+/* 更新账户余额按钮样式优化 */
+.update-balance-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+  transition: all 0.3s ease !important;
+  font-weight: 500 !important;
 }
 
-.header h2 {
-  margin: 0;
-  color: #262626;
+.update-balance-btn:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+  transform: translateY(-2px) !important;
+}
+
+.update-balance-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3) !important;
+}
+
+.update-balance-btn.ant-btn-loading {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  opacity: 0.8 !important;
 }
 </style>

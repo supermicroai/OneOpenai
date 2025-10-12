@@ -1,7 +1,6 @@
 package com.supersoft.oneapi.provider.service;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -13,8 +12,9 @@ import com.supersoft.oneapi.provider.mapper.OneapiProviderMapper;
 import com.supersoft.oneapi.provider.model.OneapiProvider;
 import com.supersoft.oneapi.provider.qos.SlidingWindowMetrics;
 import com.supersoft.oneapi.proxy.model.OneapiProviderQos;
+import com.supersoft.oneapi.util.BooleanUtils;
 import com.supersoft.oneapi.util.OneapiCommonUtils;
-import com.supersoft.oneapi.util.OneapiConfigUtils;
+import com.supersoft.oneapi.util.OneapiProviderModelUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
 
 @Slf4j
 @Service
@@ -75,78 +74,21 @@ public class OneapiProviderServiceImpl implements OneapiProviderService {
             Date providerUpdated = oneapiProviderMapper.lastModifiedTime();
             if (accountUpdated.compareTo(lastModified.get()) > 0 ||
                     providerUpdated.compareTo(lastModified.get()) > 0) {
-                log.info("提供者或账户更新, 重新加载提供者缓存, 上次更新时间={}, 最新account更新时间={}, 最新provider更新时间={}",
-                        lastModified.get(), accountUpdated, providerUpdated);
+                lastModified.set(new Date());
                 providerCache.invalidateAll();
-                lastModified.set(accountUpdated);
-            }
-            if (providerUpdated.compareTo(lastModified.get()) > 0) {
-                log.info("提供者更新, 重新加载提供者缓存");
-                modelsCache.invalidateAll();
-                lastModified.set(providerUpdated);
+                log.info("检测到配置更新, 清除缓存");
             }
         }, 10, 10, TimeUnit.SECONDS);
     }
 
+    private SlidingWindowMetrics getWindowMetrics(String provider, String model) {
+        String key = (provider == null ? "null" : provider) + ":" + (model == null ? "null" : model);
+        return metricsMap.computeIfAbsent(key, s -> new SlidingWindowMetrics(provider, model));
+    }
 
     @Override
     public OneapiProvider selectProvider(String modelName, List<OneapiProvider> exclude) {
-        long count = getWindowMetrics(null, modelName).getTotalCount();
-        List<OneapiProvider> providerItems = getAvailableProviderItems(modelName);
-        if (CollectionUtils.isEmpty(providerItems)) {
-            return null;
-        }
-        // providerItems - exclude
-        if (CollectionUtils.isNotEmpty(exclude)) {
-            providerItems.removeIf(exclude::contains);
-        }
-        if (CollectionUtils.isEmpty(providerItems)) {
-            return null;
-        }
-        // 轮询逻辑
-        int index = (int) (count % providerItems.size());
-        OneapiProvider providerItem = providerItems.get(index);
-        if (OneapiCommonUtils.enableLog()) {
-            log.info("选择节点, count: {}, provider: {}, list={}, exclude={}",
-                    count, providerItem.getName(), providerItems, exclude);
-        }
-        // 克隆一次防止对象发生操作
-        providerItem = JSON.parseObject(JSON.toJSONString(providerItem), OneapiProvider.class);
-        return providerItem;
-    }
-
-    private static SlidingWindowMetrics getWindowMetrics(String provider, String model) {
-        String finalProvider = StringUtils.isBlank(provider) ? null : provider.toLowerCase();
-        String finalModel = StringUtils.isBlank(model) ? null : model.toLowerCase();
-        String window;
-        if (StringUtils.isNotBlank(finalModel)) {
-            window = StringUtils.isBlank(finalProvider) ? model : finalProvider + "." + finalModel;
-        } else {
-            window = finalProvider;
-        }
-        return metricsMap.computeIfAbsent(window, (key) -> new SlidingWindowMetrics(finalProvider, finalModel));
-    }
-
-    private List<OneapiProvider> getAvailableProviderItems(String modelName) {
-        if (StringUtils.isBlank(modelName)) {
-            return null;
-        }
-        modelName = modelName.toLowerCase();
-        String [] parts = modelName.split(":");
-        String provider;
-        if (parts.length > 1) {
-            provider = parts[0];
-            modelName = parts[1];
-        } else {
-            provider = null;
-        }
-        Map<String, List<OneapiProvider>> map = getAvailableProviderMap(provider, modelName);
-        if (MapUtils.isEmpty(map)) {
-            return null;
-        }
-        return map.values().stream()
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream).collect(Collectors.toList());
+        return selectProvider(null, modelName, exclude);
     }
 
     @Override
@@ -155,7 +97,16 @@ public class OneapiProviderServiceImpl implements OneapiProviderService {
         if (MapUtils.isEmpty(map)) {
             return null;
         }
-        List<OneapiProvider> providerItems = map.get(provider);
+        List<OneapiProvider> providerItems;
+        if (StringUtils.isNotBlank(provider)) {
+            providerItems = map.get(provider);
+        } else {
+            // 当provider为null时，将所有provider提供的List合并
+            providerItems = map.values().stream()
+                    .filter(CollectionUtils::isNotEmpty)
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+        }
         if (CollectionUtils.isEmpty(providerItems)) {
             return null;
         }
@@ -180,146 +131,41 @@ public class OneapiProviderServiceImpl implements OneapiProviderService {
         getWindowMetrics(null, model).recordRequest(duration, TimeUnit.MILLISECONDS, success);
     }
 
-    private Map<String, List<OneapiProvider>> getAvailableProviderMap(String providerName, String modelName) {
-        Set<String> availableModels = getAvailableModels();
-        if (CollectionUtils.isEmpty(availableModels)) {
-            throw new RuntimeException("没有可用的模型");
-        }
-        // 如果传入的模型名称不正确则默认使用claude-3-haiku
-        modelName = modelName.toLowerCase();
-        if (!availableModels.contains(modelName)) {
-            throw new RuntimeException("未找到请求的模型" + modelName);
-        }
-        Map<String, List<OneapiProvider>> providerMap = getCachedProviderMap(providerName, modelName);
-        if (MapUtils.isEmpty(providerMap)) {
-            return null;
-        }
-        String finalModelName = modelName;
-        providerMap.forEach((provider, items) -> {
-            SlidingWindowMetrics metrics = getWindowMetrics(provider, finalModelName);
-            long totalCount = metrics.getTotalCount();
-            Integer tolerate = OneapiConfigUtils.getCacheConfigWithDef("oneapi.tolerate", 0);
-            if (totalCount <= tolerate) {
-                if (OneapiCommonUtils.enableLog()) {
-                    log.info("提供者 {} 模型 {} 无调用记录, 直接通过", provider, finalModelName);
-                }
-                return;
-            }
-            // 最近1分钟如果未发生过调用则直接进入
-            double oneMinuteRate = metrics.getOneMinuteRate();
-            if (oneMinuteRate <= 0) {
-                if (OneapiCommonUtils.enableLog()) {
-                    log.info("提供者 {} 模型 {} 1分钟内无调用记录, 直接通过", provider, finalModelName);
-                }
-                return;
-            }
-            // 如果1分钟成功率过低直接排除整个provider
-            Integer minSuccessRate = OneapiConfigUtils.getCacheConfigWithDef("oneapi.success.rate", 50);
-            int successRate = (int) (metrics.getOneMinuteSuccessRate() * 100 / metrics.getOneMinuteRate());
-            if (successRate < minSuccessRate) {
-                if (OneapiCommonUtils.enableLog()) {
-                    log.info("提供者 {} 模型 {} 成功率低于50%, 成功率: {}%", provider, finalModelName, successRate);
-                }
-                providerMap.put(provider, null);
-            }
-            // 如果平均rt大于5000毫秒则直接排除整个provider
-            double rt = metrics.getRt();
-            Integer maxRt = getMaxRt(finalModelName);
-            if (rt > maxRt) {
-                if (OneapiCommonUtils.enableLog()) {
-                    log.info("提供者 {} 模型 {} 平均响应时间过长, 平均响应时间: {}ms", provider, finalModelName, rt);
-                }
-                providerMap.put(provider, null);
-            }
-            // 排除没钱的账号
-            items.removeIf(item -> {
-                Double balance = item.getBalance();
-                if (balance == null) {
-                    return false;
-                }
-                return balance < 1;
-            });
-        });
-        // 排除没有有效item的provider
-        providerMap.entrySet().removeIf(entry -> CollectionUtils.isEmpty(entry.getValue()));
-        // 如果一个provider都没有了, 还是原样返回
-        if (MapUtils.isEmpty(providerMap)) {
-            return getCachedProviderMap(providerName, modelName);
-        }
-        return providerMap;
-    }
-
     /**
-     * 获取指定模型可接受的最大超时时间
-     * @param finalModelName
-     * @return
+     * 获取可用的服务提供者映射
+     *
+     * @param targetProvider 指定的服务提供者
+     * @param modelName      模型名称
+     * @return 服务提供者映射
      */
-    private Integer getMaxRt(String finalModelName) {
-        Integer maxRt = OneapiConfigUtils.getCacheConfig("oneapi.success.rt." + finalModelName, Integer.class);
-        if (maxRt == null) {
-            maxRt = OneapiConfigUtils.getCacheConfigWithDef("oneapi.success.rt", 5000);
+    private Map<String, List<OneapiProvider>> getAvailableProviderMap(String targetProvider, String modelName) {
+        // 缓存中获取
+        Map<String, List<OneapiProvider>> cache = providerCache.getIfPresent(modelName);
+        if (cache != null) {
+            return cache;
         }
-        return maxRt;
-    }
-
-    public Set<String> getAvailableModels() {
-        Set<String> models = modelsCache.getIfPresent("models");
-        if (models == null) {
-            QueryWrapper<OneapiProviderDO> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("enable", true);
-            models = oneapiModelMapper.selectModelNames();
-            modelsCache.put("models", models);
-        }
-        return models;
-    }
-
-    private Map<String, List<OneapiProvider>> getCachedProviderMap(String targetProvider, String modelName) {
-        Map<String, List<OneapiProvider>> map = providerCache.getIfPresent(modelName);
-        if (map == null) {
-            map = getProviderMap(targetProvider, modelName);
-            providerCache.put(modelName, map);
-        }
-        return map;
-    }
-
-    /**
-     * 本函数不做缓存, 在上层调用时做缓存
-     * 根据模型名称获取提供者列表
-     * 单个服务提供者, 如阿里云可以配置多个账号, 数据量较小直接在内存计算, 避免复杂json sql查询
-     * @param modelName
-     * @return
-     */
-    private Map<String, List<OneapiProvider>> getProviderMap(String targetProvider, String modelName) {
-        QueryWrapper<OneapiProviderDO> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("enable", true);
-        List<OneapiProviderDO> list = oneapiProviderMapper.selectList(queryWrapper);
+        QueryWrapper<OneapiProviderDO> query = new QueryWrapper<>();
+        query.eq("enable", BooleanUtils.toInteger(true));
+        List<OneapiProviderDO> list = oneapiProviderMapper.selectList(query);
         if (CollectionUtils.isEmpty(list)) {
             return Map.of();
         }
         QueryWrapper<OneapiAccountDO> queryAccount = new QueryWrapper<>();
-        queryAccount.eq("status", 1);
+        queryAccount.eq("status", BooleanUtils.toInteger(true));
         List<OneapiAccountDO> accounts = oneapiAccountMapper.selectList(queryAccount);
         if (CollectionUtils.isEmpty(accounts)) {
             return Map.of();
         }
         Map<String, List<OneapiAccountDO>> accountMap = accounts.stream()
-                .collect(Collectors.groupingBy(OneapiAccountDO::getName));
+                .collect(Collectors.groupingBy(OneapiAccountDO::getProviderCode));
         Map<String, List<OneapiProvider>> map = new HashMap<>();
         // 遍历服务提供者list，并按照账号展开，给出可以提供服务的所有账号
         list.forEach(item -> {
-            String provider = item.getName();
+            String provider = item.getCode();
             // 如果指定了服务提供者则必须使用该服务提供者的账号
             if (StringUtils.isNotBlank(targetProvider) && !targetProvider.equals(provider)) {
                 return;
             }
-            Map<String, String> modelMap = JSON.parseObject(item.getModels(), new TypeReference<>() {});
-            if (MapUtils.isEmpty(modelMap)) {
-                if (OneapiCommonUtils.enableLog()) {
-                    log.info("提供者配置异常: {}", item);
-                }
-                return;
-            }
-            modelMap = toLowerCaseKeys(modelMap);
             List<OneapiAccountDO> providerAccounts = accountMap.get(provider);
             if (CollectionUtils.isEmpty(providerAccounts)) {
                 if (OneapiCommonUtils.enableLog()) {
@@ -327,7 +173,7 @@ public class OneapiProviderServiceImpl implements OneapiProviderService {
                 }
                 return;
             }
-            String mapModelName = modelMap.get(modelName.toLowerCase());
+            String mapModelName = OneapiProviderModelUtils.parseAndProcessModelMapping(item.getModels(), modelName);
             if (StringUtils.isBlank(mapModelName)) {
                 if (OneapiCommonUtils.enableLog()) {
                     log.info("提供者{}未提供{}的模型", provider, modelName);
@@ -351,14 +197,7 @@ public class OneapiProviderServiceImpl implements OneapiProviderService {
                 items.add(providerItem);
             });
         });
+        providerCache.put(modelName, map);
         return map;
-    }
-
-    public static Map<String, String> toLowerCaseKeys(Map<String, String> map) {
-        if (MapUtils.isEmpty(map)) {
-            return map;
-        }
-        return map.entrySet().stream()
-                .collect(Collectors.toMap(entry -> entry.getKey().toLowerCase(), Map.Entry::getValue));
     }
 }

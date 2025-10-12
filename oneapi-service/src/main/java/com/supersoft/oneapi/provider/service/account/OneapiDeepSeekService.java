@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.supersoft.oneapi.provider.data.OneapiAccountDO;
 import com.supersoft.oneapi.provider.service.OneapiAccountService;
+import com.supersoft.oneapi.util.OneapiCommonUtils;
 import com.supersoft.oneapi.util.OneapiHttpUtils;
 import lombok.Data;
 import org.apache.commons.collections.CollectionUtils;
@@ -19,25 +20,31 @@ public class OneapiDeepSeekService implements OneapiAccountService {
 
 
     @Override
-    public boolean getCredits(String apiKey, OneapiAccountDO account) {
+    public Double getCredits(OneapiAccountDO account) {
+        String apiKey = account.getApiKey();
+        if (StringUtils.isBlank(apiKey)) {
+            return null;
+        }
+        
         String result = OneapiHttpUtils.get(API, Map.of(AUTHORIZATION, BEARER + apiKey));
         if (StringUtils.isBlank(result)) {
-            return false;
+            return null;
         }
         DeepSeekBalance balance = JSON.parseObject(result, DeepSeekBalance.class);
         if (balance == null) {
-            return false;
+            return null;
         }
         List<DeepSeekBalanceInfo> infos = balance.getInfos();
         if (CollectionUtils.isEmpty(infos)) {
-            return false;
+            return null;
         }
         DeepSeekBalanceInfo info = infos.getFirst();
         if (info == null) {
-            return false;
+            return null;
         }
-        account.setBalance(info.getBalance());
-        return true;
+        double balanceValue = OneapiCommonUtils.shortDouble(info.getBalance());
+        account.setBalance(balanceValue);
+        return balanceValue;
     }
 
     @Override

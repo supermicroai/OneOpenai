@@ -69,13 +69,14 @@
         添加模型
       </a-button>
     </div>
-    
-    <a-table 
-      :columns="columns" 
-      :data-source="paginatedData" 
+
+    <AutoHeightTable
+      :columns="columns"
+      :data-source="paginatedData"
       :pagination="paginationConfig"
       :loading="loading"
       row-key="id"
+      :scroll="{ x: 'max-content', y: 'max-content' }"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'type'">
@@ -90,7 +91,7 @@
           {{ record.outputPrice || '-' }}
         </template>
         <template v-else-if="column.dataIndex === 'enabled'">
-          <a-switch 
+          <a-switch
             :checked="record.enable === 1 || record.enable === true"
             @change="(checked) => toggleModel(record, checked)"
           />
@@ -113,7 +114,7 @@
           </a-space>
         </template>
       </template>
-    </a-table>
+    </AutoHeightTable>
 
     <!-- Add/Edit Modal -->
     <a-modal
@@ -197,6 +198,7 @@ import {
   deleteModel as deleteModelApi,
   toggleModel as toggleModelApi 
 } from '@/api/model';
+import AutoHeightTable from '@/components/AutoHeightTable.vue';
 
 const loading = ref(false);
 const modelList = ref([]);
@@ -273,16 +275,19 @@ const columns = [
     title: '操作',
     dataIndex: 'action',
     width: 150,
+    fixed: 'right',
   }
 ];
 
 const pagination = ref({
   current: 1,
-  pageSize: 10,
+  pageSize: 20,
   total: 0,
   showSizeChanger: true,
   showQuickJumper: true,
   showTotal: (total) => `共 ${total} 条记录`,
+  showSizeChangerOptions: { pageSizeOptions: ['10', '20', '50', '100'] },
+  pageSizeOptions: ['10', '20', '50', '100']
 });
 
 const rules = {
@@ -346,14 +351,6 @@ const handleSearch = () => {
   applyFilters();
 };
 
-const handleVendorFilter = () => {
-  applyFilters();
-};
-
-const handleTypeFilter = () => {
-  applyFilters();
-};
-
 const handleReset = () => {
   searchKeyword.value = '';
   vendorFilter.value = '';
@@ -390,7 +387,7 @@ const loadModels = async () => {
   try {
     const response = await getModels();
     modelList.value = response.data.data || [];
-    applyFilters(); // Apply current filters after loading
+    applyFilters();
   } catch (error) {
     message.error('获取模型列表失败：' + error.message);
   } finally {
@@ -489,17 +486,9 @@ onMounted(() => {
   background: white;
   margin: 16px;
   border-radius: 8px;
-}
-
-.header {
+  height: calc(100vh - 96px);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.header h2 {
-  margin: 0;
-  color: #262626;
+  flex-direction: column;
+  overflow: hidden;
 }
 </style>

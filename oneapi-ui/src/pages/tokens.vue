@@ -9,16 +9,17 @@
         新建令牌
       </a-button>
     </div>
-    
-    <a-table 
-      :columns="columns" 
-      :dataSource="tokens" 
+
+    <AutoHeightTable
+      :columns="columns"
+      :dataSource="tokens"
       :loading="loading"
       rowKey="id"
       :pagination="paginationConfig"
+      :scroll="{ x: 'max-content', y: 'max-content' }"
     >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'apiKey'">
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'apiKey'">
             <span style="display: flex; align-items: center; gap: 8px;">
               <span>{{ maskApiKey(record.apiKey) }}</span>
               <a-button 
@@ -80,7 +81,7 @@
             </a-space>
           </template>
         </template>
-    </a-table>
+    </AutoHeightTable>
 
     <!-- 创建/编辑令牌对话框 -->
     <a-modal 
@@ -157,6 +158,7 @@ import { message } from 'ant-design-vue';
 import { PlusOutlined, CopyOutlined } from '@ant-design/icons-vue';
 import dayjs from 'dayjs';
 import { getAllTokens, createToken, updateToken, deleteToken } from '@/api/token.js';
+import AutoHeightTable from '@/components/AutoHeightTable.vue';
 
 const tokens = ref([]);
 const loading = ref(false);
@@ -171,6 +173,18 @@ const pagination = ref({
   showSizeChanger: true,
   showQuickJumper: true,
   showTotal: (total) => `共 ${total} 条记录`,
+  locale: {
+    items_per_page: '条/页',
+    jump_to: '跳至',
+    jump_to_confirm: '确定',
+    page: '页',
+    prev_page: '上一页',
+    next_page: '下一页',
+    prev_5: '向前 5 页',
+    next_5: '向后 5 页',
+    prev_3: '向前 3 页',
+    next_3: '向后 3 页'
+  }
 });
 
 const form = reactive({
@@ -234,6 +248,7 @@ const columns = [
     title: '操作',
     key: 'action',
     width: 200,
+    fixed: 'right',
   },
 ];
 
@@ -405,5 +420,9 @@ onMounted(() => {
   background: white;
   margin: 16px;
   border-radius: 8px;
+  height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 </style>

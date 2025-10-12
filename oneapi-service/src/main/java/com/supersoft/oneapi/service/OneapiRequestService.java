@@ -11,6 +11,7 @@ import com.supersoft.oneapi.token.data.OneapiTokenDO;
 import com.supersoft.oneapi.token.service.OneapiTokenService;
 import com.supersoft.oneapi.token.service.OneapiTokenCacheService;
 import com.supersoft.oneapi.util.*;
+import com.supersoft.oneapi.service.alert.OneapiAlertManager;
 import jakarta.annotation.Resource;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
@@ -49,8 +50,9 @@ public class OneapiRequestService {
     private static final int MAX_RETRY = 3;
 
     private static final CloseableHttpClient httpClient;
-    public static final String PREFIX = "data: ";
-    public static final String SEP = "\\r?\\n";
+    private static final String PREFIX = "data: ";
+    private static final String SEP = "\\r?\\n";
+    private static final String ONEAPI_RETRY = "oneapi.retry";
 
     static {
         // 创建连接管理器
@@ -75,9 +77,9 @@ public class OneapiRequestService {
     @Resource
     OneapiRequestLogService requestLogService;
     @Resource
-    OneapiTokenService tokenService;
-    @Resource
     OneapiTokenCacheService tokenCacheService;
+    @Resource
+    OneapiAlertManager oneapiAlertManager;
 
     public OneapiSingleResult<String> doRequest(OneapiProvider provider,
                                                 HttpServletResponse response, String jsonBody, String clientIp) {
@@ -184,7 +186,7 @@ public class OneapiRequestService {
     private void handleException(OneapiProvider provider, Exception e) {
         // 余额不足
         if (e instanceof OneapiOutOfCreditException) {
-            OneapiDingTalkUtils.sendAlert(String.format("账户余额不足, 服务提供者:%s, 账号:%s",
+            oneapiAlertManager.sendAlert(String.format("账户余额不足, 服务提供者:%s, 账号:%s",
                     provider.getName(), provider.getNote()));
         }
     }
@@ -239,14 +241,14 @@ public class OneapiRequestService {
      */
     public void invokeRetry(HttpServletResponse response, String model, Object request,
                              Function<OneapiProvider, OneapiSingleResult<String>> supplier) {
-        Integer maxRetry = OneapiConfigUtils.getCacheConfigWithDef("oneapi.retry", MAX_RETRY);
+        Integer maxRetry = OneapiConfigUtils.getCacheConfigWithDef(ONEAPI_RETRY, MAX_RETRY);
         int count = 0;
         List<OneapiProvider> exclude = new ArrayList<>();
         OneapiSingleResult<String> invokeResult = null;
         // 统一改为json+utf8返回, 如果有特殊诉求后续在不同分支修改
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        while (isErrorResponse(invokeResult) && count++ < maxRetry) {
+        while (isErrorResponse(invokeResult) && maxRetry != null && count++ < maxRetry) {
             if (invokeResult != null) {
                 log.error("调用异常发生异常, 请求={}. 错误原因={}, 当前重试={}", request, invokeResult.getMessage(), count);
             }

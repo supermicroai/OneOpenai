@@ -23,6 +23,8 @@ target/
 
 .idea/
 
+data/
+
 APP-META/*.jar
 
 ### NetBeans ###

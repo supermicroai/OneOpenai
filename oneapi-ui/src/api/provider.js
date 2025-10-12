@@ -77,3 +77,11 @@ export function deleteAccount (id) {
         data: [id]
     })
 }
+
+export function updateAllAccountBalances () {
+    return request({
+        url: '/service/com.supersoft.oneapi.proxy.service.OneapiConfigFacade/updateAllAccountBalances',
+        method: 'post',
+        data: []
+    })
+}

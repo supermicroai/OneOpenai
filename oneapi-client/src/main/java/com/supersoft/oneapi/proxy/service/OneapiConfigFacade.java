@@ -135,4 +135,10 @@ public interface OneapiConfigFacade {
      * @return 更新结果
      */
     OneapiSingleResult<OneapiConfigDO> updateConfig(OneapiConfigDO config);
+
+    /**
+     * 手动触发获取所有账户余额
+     * @return 更新结果
+     */
+    OneapiSingleResult<Boolean> updateAllAccountBalances();
 }

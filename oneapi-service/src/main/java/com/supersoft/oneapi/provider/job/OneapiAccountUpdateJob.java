@@ -7,18 +7,18 @@ import com.supersoft.oneapi.provider.mapper.OneapiAccountMapper;
 import com.supersoft.oneapi.provider.mapper.OneapiProviderMapper;
 import com.supersoft.oneapi.provider.service.OneapiAccountService;
 import com.supersoft.oneapi.util.OneapiConfigUtils;
-import com.supersoft.oneapi.util.OneapiDingTalkUtils;
+import com.supersoft.oneapi.service.alert.OneapiAlertManager;
 import com.supersoft.oneapi.util.OneapiServiceLocator;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
+import com.supersoft.oneapi.util.BooleanUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -29,70 +29,135 @@ public class OneapiAccountUpdateJob {
     public static final int MIN_CREDIT = 5;
     public static final String CREDIT_KEY = "oneapi.credit.min";
     @Resource
-    OneapiProviderMapper oneapiProviderMapper;
+    OneapiAlertManager oneapiAlertManager;
     @Resource
     OneapiAccountMapper oneapiAccountMapper;
+    @Resource
+    OneapiProviderMapper oneapiProviderMapper;
 
     @PostConstruct
     public void init() {
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
+        Executors.newSingleThreadScheduledExecutor()
+                .scheduleWithFixedDelay(this::updateAllAccountBalances, 0, 10, TimeUnit.MINUTES);
+    }
+
+    /**
+     * 更新所有账户余额
+     * @return 更新结果统计
+     */
+    public UpdateResult updateAllAccountBalances() {
+        try {
+            log.info("开始更新所有账户余额");
+            
+            // 获取所有启用的提供商
             QueryWrapper<OneapiProviderDO> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("enable", true);
-            List<OneapiProviderDO> list = oneapiProviderMapper.selectList(queryWrapper);
-            if (CollectionUtils.isEmpty(list)) {
-                return;
+            queryWrapper.eq("enable", BooleanUtils.toInteger(true));
+            List<OneapiProviderDO> providers = oneapiProviderMapper.selectList(queryWrapper);
+            if (CollectionUtils.isEmpty(providers)) {
+                log.info("没有找到启用的提供商");
+                return new UpdateResult(0, 0);
             }
+            
+            // 获取所有启用的账户
             QueryWrapper<OneapiAccountDO> queryAccount = new QueryWrapper<>();
-            queryAccount.eq("status", 1);
+            queryAccount.eq("status", BooleanUtils.toInteger(true));
             List<OneapiAccountDO> accounts = oneapiAccountMapper.selectList(queryAccount);
             if (CollectionUtils.isEmpty(accounts)) {
-                return;
+                log.info("没有找到启用的账户");
+                return new UpdateResult(0, 0);
             }
-            if (CollectionUtils.isEmpty(accounts)) {
-                return;
-            }
+            
+            // 按提供商代码分组账户
             Map<String, List<OneapiAccountDO>> accountMap = accounts.stream()
-                    .collect(Collectors.groupingBy(OneapiAccountDO::getName));
-            // 直接双重循环
-            list.forEach(provider -> {
-                String providerName = provider.getName();
-                log.debug("开始更新账号余额: {}", providerName);
-                List<OneapiAccountDO> providerAccounts = accountMap.get(providerName);
+                    .collect(Collectors.groupingBy(OneapiAccountDO::getProviderCode));
+            
+            int successCount = 0;
+            int failCount = 0;
+            
+            // 遍历所有提供商
+            for (OneapiProviderDO provider : providers) {
+                String providerCode = provider.getCode();
+                log.debug("开始更新提供商 {} 的账号余额", providerCode);
+                
+                List<OneapiAccountDO> providerAccounts = accountMap.get(providerCode);
                 if (CollectionUtils.isEmpty(providerAccounts)) {
-                    return;
+                    log.debug("提供商 {} 没有关联的账户", providerCode);
+                    continue;
                 }
-                providerAccounts.forEach(account -> {
+                
+                // 遍历该提供商的所有账户
+                for (OneapiAccountDO account : providerAccounts) {
                     try {
-                        String accountName = account.getName();
-                        if (Objects.equals(providerName, accountName)) {
-                            String accountService = provider.getService();
-                            OneapiAccountService service = OneapiServiceLocator.getBeanSafe(accountService,
-                                    OneapiAccountService.class);
-                            if (service == null) {
-                                return;
+                        String accountService = provider.getService();
+                        OneapiAccountService service = OneapiServiceLocator.getBeanSafe(accountService,
+                                OneapiAccountService.class);
+                        if (service == null) {
+                            log.warn("找不到服务实现: {}", accountService);
+                            failCount++;
+                            continue;
+                        }
+                        
+                        // 获取余额
+                        Double balance = service.getCredits(account);
+                        if (balance != null) {
+                            // 更新账户余额
+                            account.setBalance(balance);
+                            account.setGmtModified(new Date());
+                            oneapiAccountMapper.updateById(account);
+                            successCount++;
+                            
+                            // 检查余额是否低于阈值
+                            Integer limit = OneapiConfigUtils.getConfigWithDef(CREDIT_KEY, MIN_CREDIT);
+                            if (limit != null && balance < limit) {
+                                oneapiAlertManager.sendAlert(String.format("账户余额不足%d元, 服务提供者:%s, 账号:%s",
+                                        limit, provider.getName(), account.getNote()));
                             }
-                            String apiKey = account.getApiKey();
-                            if (StringUtils.isBlank(apiKey)) {
-                                return;
-                            }
-                            boolean changed = service.getCredits(apiKey, account);
-                            if (changed) {
-                                double balance = account.getBalance();
-                                // 如果余额低于阈值则发送告警
-                                Integer limit = OneapiConfigUtils.getConfigWithDef(CREDIT_KEY, MIN_CREDIT);
-                                if (balance < limit) {
-                                    OneapiDingTalkUtils.sendAlert(String.format("账户余额不足%d元, 服务提供者:%s, 账号:%s",
-                                            limit, provider.getName(), account.getNote()));
-                                }
-                                oneapiAccountMapper.updateById(account);
-                            }
+                            
+                            log.debug("成功更新账户 {} 余额为 {}", account.getNote(), balance);
+                        } else {
+                            log.warn("获取账户 {} 余额失败", account.getNote());
+                            failCount++;
                         }
                     } catch (Exception e) {
-                        log.error("获取余额失败", e);
+                        log.error("更新账户 {} 余额异常", account.getNote(), e);
+                        failCount++;
                     }
-                });
-                log.debug("结束更新账号余额: {}", providerName);
-            });
-        }, 0, 10, TimeUnit.MINUTES);
+                }
+                
+                log.debug("完成更新提供商 {} 的账号余额", providerCode);
+            }
+            
+            log.info("更新账户余额完成，成功: {}, 失败: {}", successCount, failCount);
+            return new UpdateResult(successCount, failCount);
+            
+        } catch (Exception e) {
+            log.error("更新账户余额异常", e);
+            return new UpdateResult(0, 1);
+        }
+    }
+
+    /**
+     * 更新结果统计类
+     */
+    public static class UpdateResult {
+        private final int successCount;
+        private final int failCount;
+        
+        public UpdateResult(int successCount, int failCount) {
+            this.successCount = successCount;
+            this.failCount = failCount;
+        }
+        
+        public int getSuccessCount() {
+            return successCount;
+        }
+        
+        public int getFailCount() {
+            return failCount;
+        }
+        
+        public int getTotalCount() {
+            return successCount + failCount;
+        }
     }
 }

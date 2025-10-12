@@ -3,6 +3,7 @@ package com.supersoft.oneapi.provider.service.account;
 import com.alibaba.fastjson.JSON;
 import com.supersoft.oneapi.provider.data.OneapiAccountDO;
 import com.supersoft.oneapi.provider.service.OneapiAccountService;
+import com.supersoft.oneapi.util.OneapiCommonUtils;
 import com.supersoft.oneapi.util.OneapiHttpUtils;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -15,21 +16,27 @@ public class OneapiSiliconService implements OneapiAccountService {
     private static final String API = "https://api.siliconflow.cn/v1/user/info";
 
     @Override
-    public boolean getCredits(String apiKey, OneapiAccountDO account) {
+    public Double getCredits(OneapiAccountDO account) {
+        String apiKey = account.getApiKey();
+        if (StringUtils.isBlank(apiKey)) {
+            return null;
+        }
+        
         String result = OneapiHttpUtils.get(API, Map.of(AUTHORIZATION, BEARER + apiKey));
         if (StringUtils.isBlank(result)) {
-            return false;
+            return null;
         }
         SiliconResponse response = JSON.parseObject(result, SiliconResponse.class);
         if (response == null) {
-            return false;
+            return null;
         }
         SiliconUserInfo data = response.getData();
         if (data == null) {
-            return false;
+            return null;
         }
-        account.setBalance(data.getTotalBalance());
-        return true;
+        double balance = OneapiCommonUtils.shortDouble(data.getTotalBalance());
+        account.setBalance(balance);
+        return balance;
     }
 
     @Override

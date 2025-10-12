@@ -17,10 +17,55 @@ OneAPI is an OpenAI proxy application designed to provide LLM proxy services und
     - Supports automatic circuit breaker capability for accounts that experience continuous exceptions, with recovery after a certain period.
     - Supports automatic balance updates for some third-party proxies (most third-party proxies do not provide balance query interfaces, so the balance field needs to be maintained manually) and supports DingTalk group notifications.
     - Allows specifying the third-party proxy and model to call using the format `provider:model_name`, for example, `openrouter:gpt-4o-mini`.
-- Provides OCR proxy services based on Aliyun services. Currently, it only supports Alibaba Cloud's OCR service, and since there is no widely recognized protocol for OCR services, the OCR interface protocol is privately defined and can be modified according to needs.
-- The application supports H2 and MySQL. Please modify the data source configuration in `application.properties` and package it accordingly.
+    - Provides OCR proxy services based on Aliyun services. Currently, it only supports Alibaba Cloud's OCR service, and since there is no widely recognized protocol for OCR services, the OCR interface protocol is privately defined and can be modified according to needs.
+    - The application supports H2, MySQL, and PostgreSQL databases. Please modify the data source configuration in `application.properties` and package it accordingly.
     - On the first startup, the database will be automatically initialized. The initialization process includes creating necessary tables and inserting initial data.
     - The account data in the initialization data is purely test data and cannot be called. Please register third-party accounts and modify the account configuration.
+
+## Database Configuration
+
+The application supports three database types:
+
+### H2 Database (Default)
+H2 is used by default for development and testing. No additional configuration is required.
+
+```properties
+# H2 database configuration (default)
+spring.datasource.url=jdbc:h2:file:./data/oneapi;AUTO_RECONNECT=TRUE
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+```
+
+### MySQL Database
+For production environments, MySQL is recommended.
+
+```properties
+# MySQL database configuration
+spring.datasource.url=jdbc:mysql://localhost:3306/oneapi?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.username=root
+spring.datasource.password=password
+```
+
+### PostgreSQL Database
+PostgreSQL is also supported for production environments with advanced features.
+
+```properties
+# PostgreSQL database configuration
+spring.datasource.url=jdbc:postgresql://localhost:5432/oneapi
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.username=postgres
+spring.datasource.password=password
+```
+
+### Database Setup Instructions
+
+1. **Choose your database**: Comment out the current database configuration and uncomment the desired database configuration in `application.properties`
+2. **Create database**: Create a database named `oneapi` in your chosen database system
+3. **Start application**: The application will automatically detect the database type and initialize the schema
+
+**Note**: The application will automatically create all necessary tables and insert initial data on first startup. No manual database setup is required.
 
 ## API Usage
 Fully compatible with the OpenAI LLM proxy interface. Please refer to the [OpenAI LLM API documentation](https://platform.openai.com/docs/introduction).
@@ -54,43 +99,3 @@ Fully compatible with the OpenAI LLM proxy interface. Please refer to the [OpenA
 - Click the `Add Account` button to add a new account.
 - Click the `Enable` button to enable or disable the account.
   ![账号列表.png](doc/img2.png)
-
-## Secondary Development
-### How to Build the Image
-1. Build the front-end code
-    ```bash
-    cd oneapi-ui
-    pnpm install
-    pnpm run build
-    ```
-2. Build the back-end code
-- After the code is compiled, the final generated fat jar will be copied to the docker directory for building the image.
-    ```bash
-    mvn clean package -Pdev
-    ```
-3. Build the image
-- Change account from supermicroai to your account
-    ```bash
-    cd APP-META/docker-config
-    docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile.jdk21 -t supermicroai/almalinux9-jdk21:$(date +%Y%m%d) -t supermicroai/almalinux9-jdk21:latest .
-    docker buildx build --platform linux/amd64,linux/arm64 -t supermicroai/oneapi:$(date +%Y%m%d) -t supermicroai/oneapi:latest .
-    docker buildx build --platform linux/amd64,linux/arm64 -t supermicroai/oneapi:$(date +%Y%m%d) -t supermicroai/oneapi:latest --push .
-    ```
-## Deployment Methods
-
-### Docker Deployment
-1. Pull the Docker image:
-    ```bash
-    docker pull supermicroai/oneapi
-    ```
-2. Run the Docker container:
-    ```bash
-    docker run -d -p 7001:7001 supermicroai/oneapi
-    ```
-
-### Kubernetes Deployment
-1. Modify the `image` field in the deployment file [app.yaml](APP-META/app.yaml) to the compiled image address.
-2. Apply the deployment file:
-    ```bash
-    kubectl apply -f app.yaml
-    ```

@@ -67,7 +67,7 @@ public class OneapiConfigUtils {
             throw new IllegalArgumentException("defaultValue can not be null");
         }
         T value = getGroupConfig(null, key + "." + OneapiCommonUtils.getEnv(),
-                (Class<T>)defaultValue.getClass());
+                (Class<T>) defaultValue.getClass());
         if (value != null) {
             return value;
         }
