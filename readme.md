@@ -99,3 +99,43 @@ Fully compatible with the OpenAI LLM proxy interface. Please refer to the [OpenA
 - Click the `Add Account` button to add a new account.
 - Click the `Enable` button to enable or disable the account.
   ![账号列表.png](doc/img2.png)
+
+## Secondary Development
+### How to Build the Image
+1. Build the front-end code
+    ```bash
+    cd oneapi-ui
+    pnpm install
+    pnpm run build
+    ```
+2. Build the back-end code
+- After the code is compiled, the final generated fat jar will be copied to the docker directory for building the image.
+    ```bash
+    mvn clean package -Pdev
+    ```
+3. Build the image
+- Change account from supermicroai to your account
+    ```bash
+    cd APP-META/docker-config
+    docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile.jdk21 -t supermicroai/almalinux9-jdk21:$(date +%Y%m%d) -t supermicroai/almalinux9-jdk21:latest .
+    docker buildx build --platform linux/amd64,linux/arm64 -t supermicroai/oneapi:$(date +%Y%m%d) -t supermicroai/oneapi:latest .
+    docker buildx build --platform linux/amd64,linux/arm64 -t supermicroai/oneapi:$(date +%Y%m%d) -t supermicroai/oneapi:latest --push .
+    ```
+## Deployment Methods
+
+### Docker Deployment
+1. Pull the Docker image:
+    ```bash
+    docker pull supermicroai/oneapi
+    ```
+2. Run the Docker container:
+    ```bash
+    docker run -d -p 7001:7001 supermicroai/oneapi
+    ```
+
+### Kubernetes Deployment
+1. Modify the `image` field in the deployment file [app.yaml](APP-META/app.yaml) to the compiled image address.
+2. Apply the deployment file:
+    ```bash
+    kubectl apply -f app.yaml
+    ```

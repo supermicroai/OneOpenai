@@ -101,3 +101,44 @@ spring.datasource.password=password
 - 页面中点击`新增账号`按钮可以新增账号
 - 点击`是否启用`按钮可以启用或禁用账号
 ![账号列表.png](doc/img2.png)
+## 二次开发
+### 如何编译镜像
+1. 编译前端代码
+    ```bash
+    cd oneapi-ui
+    pnpm install
+    pnpm run build
+    ```
+2. 编译后端代码
+- 代码编译后会将最终生成的fatjar拷贝到docker目录下用于构建镜像
+    ```bash
+    mvn clean package -Pdev
+    ```
+3. 构建镜像
+- 将账号从supermicroai改为你自己的账号
+    ```bash
+    cd APP-META/docker-config
+    docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile.jdk21 -t supermicroai/almalinux9-jdk21:$(date +%Y%m%d) -t supermicroai/almalinux9-jdk21:latest .
+    docker buildx build --platform linux/amd64,linux/arm64 -t supermicroai/oneapi:$(date +%Y%m%d) -t supermicroai/oneapi:latest .
+    docker buildx build --platform linux/amd64,linux/arm64 -t supermicroai/oneapi:$(date +%Y%m%d) -t supermicroai/oneapi:latest --push .
+    ```
+
+## 部署方式
+
+### Docker 部署
+1. 拉取 Docker 镜像：
+    ```bash
+    docker pull supermicroai/oneapi
+    ```
+
+2. 运行 Docker 容器：
+    ```bash
+    docker run -d -p 7001:7001 --name oneapi supermicroai/oneapi
+    ```
+
+### Kubernetes 部署
+1. 修改部署文件[app.yaml](APP-META/app.yaml)中的`image`字段编译完成的镜像地址
+2. 部署到 Kubernetes 集群：
+    ```bash
+    kubectl apply -f app.yaml
+    ```
