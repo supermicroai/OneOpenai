@@ -78,7 +78,6 @@ INSERT INTO oneapi_model (name, vendor, type, input_price, output_price, enable)
     ('claude-4.0-sonnet', 'Claude', 'llm', 5.0, 25.0, 1),
     ('claude-4.5-sonnet', 'Claude', 'llm', 5.0, 25.0, 1),
     ('deepseek-chat', 'DeepSeek', 'llm', 0.14, 0.28, 1),
-    ('deepseek-chat-v2', 'DeepSeek', 'llm', 0.14, 0.28, 1),
     ('gpt-3.5-turbo', 'OpenAI', 'llm', 1.5, 2.0, 1),
     ('gpt-4o', 'OpenAI', 'llm', 2.5, 10.0, 1),
     ('gpt-4o-mini', 'OpenAI', 'llm', 0.15, 0.6, 1),
@@ -141,7 +140,10 @@ INSERT INTO oneapi_provider (code, name, url, api, models, service, enable) VALU
     ('azure', 'Azure OpenAI', 'https://azure.microsoft.com/zh-cn/products/ai-services/openai-service', 'https://{deployment}.openai.azure.com', '{"azure-gpt-4o":{"alias":"gpt-4o","inputPrice":2.5,"outputPrice":10.0},"azure-gpt-4o-mini":{"alias":"gpt-4o-mini","inputPrice":0.15,"outputPrice":0.6},"azure-gpt-35-turbo":{"alias":"gpt-35-turbo","inputPrice":1.5,"outputPrice":2.0}}', 'azureService', 1),
     
     -- AWS Bedrock: 支持LLM
-    ('bedrock', 'AWS Bedrock', 'https://aws.amazon.com/bedrock', 'https://bedrock-runtime.{region}.amazonaws.com', '{"bedrock-claude-3-haiku":{"alias":"anthropic.claude-3-haiku-20240307-v1:0","inputPrice":0.25,"outputPrice":1.25},"bedrock-claude-3-sonnet":{"alias":"anthropic.claude-3-sonnet-20240229-v1:0","inputPrice":3.0,"outputPrice":15.0},"bedrock-claude-3.5-sonnet":{"alias":"anthropic.claude-3-5-sonnet-20241022-v2:0","inputPrice":3.0,"outputPrice":15.0}}', 'bedrockService', 1);
+    ('bedrock', 'AWS Bedrock', 'https://aws.amazon.com/bedrock', 'https://bedrock-runtime.{region}.amazonaws.com', '{"bedrock-claude-3-haiku":{"alias":"anthropic.claude-3-haiku-20240307-v1:0","inputPrice":0.25,"outputPrice":1.25},"bedrock-claude-3-sonnet":{"alias":"anthropic.claude-3-sonnet-20240229-v1:0","inputPrice":3.0,"outputPrice":15.0},"bedrock-claude-3.5-sonnet":{"alias":"anthropic.claude-3-5-sonnet-20241022-v2:0","inputPrice":3.0,"outputPrice":15.0}}', 'bedrockService', 1),
+    
+    -- DeepSeek官方: 支持LLM
+    ('deepseek', 'DeepSeek', 'https://platform.deepseek.com', 'https://api.deepseek.com/v1', '{"deepseek-chat":{"alias":"deepseek-chat","inputPrice":0.14,"outputPrice":0.28}}', 'deepseekService', 1);
 
 -- 令牌管理表
 create table oneapi_token

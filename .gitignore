@@ -23,7 +23,7 @@ target/
 
 .idea/
 
-data/
+temp/
 
 APP-META/*.jar
 

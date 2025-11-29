@@ -58,7 +58,7 @@ public class TestModelApi {
                 .onError(future::completeExceptionally)
                 .execute();
         String response = future.get(30, SECONDS);
-        log.info("response:{}", response);
+        log.info("response async:{}", response);
     }
 
     public void llmSyncTest() throws Exception {
@@ -67,7 +67,7 @@ public class TestModelApi {
                 .addUserMessage("你的模型名称是什么, 你的信息更新截止时间是什么")
                 .build();
         ChatCompletionResponse response = client.chatCompletion(request).execute();
-        log.info("response:{}", response);
+        log.info("response llm:{}", response);
     }
 
     public void llmSyncProviderTest() throws Exception {
@@ -76,8 +76,18 @@ public class TestModelApi {
                 .addUserMessage("你的模型名称是什么, 你的信息更新截止时间是什么")
                 .build();
         ChatCompletionResponse response = client.chatCompletion(request).execute();
-        log.info("response:{}", response);
+        log.info("response provider:{}", response);
     }
+
+    public void llmSyncDeepseekTest() throws Exception {
+        ChatCompletionRequest request = ChatCompletionRequest.builder()
+                .model("deepseek-chat")
+                .addUserMessage("你的模型名称是什么, 你的信息更新截止时间是什么")
+                .build();
+        ChatCompletionResponse response = client.chatCompletion(request).execute();
+        log.info("deepseek response:{}", response);
+    }
+
 
     /**
      * 验证embedding
@@ -119,7 +129,7 @@ public class TestModelApi {
      */
     public void multiModalImageTextRecognitionTest() throws Exception {
         String imageUrl = "https://tc.z.wiki/autoupload/f/vn25-tb2th3ipZ6BVJ3qt1dp1U-2uSN2DL7hMUxDA4Wyl5f0KlZfm6UsKj-HyTuv/20251001/LBGM/555X76/test.png/webp";
-        
+
         ChatCompletionRequest request = ChatCompletionRequest.builder()
                 .model("gpt-4o")  // 使用支持视觉的模型
                 .messages(UserMessage.builder()
@@ -127,22 +137,22 @@ public class TestModelApi {
                         .addImageUrl(imageUrl)
                         .build())
                 .build();
-                
+
         log.info("开始处理图片文字识别，图片URL: {}", imageUrl);
         long start = System.currentTimeMillis();
-        
+
         ChatCompletionResponse response = client.chatCompletion(request).execute();
-        
+
         long cost = System.currentTimeMillis() - start;
         log.info("图片文字识别完成，耗时: {}ms", cost);
-        
+
         if (response.choices() != null && !response.choices().isEmpty()) {
             String extractedText = response.choices().getFirst().message().content();
             log.info("识别到的文字内容:\n{}", extractedText);
         } else {
             log.warn("未能从响应中获取到文字识别结果");
         }
-        
+
         log.info("完整响应: {}", response);
     }
 
